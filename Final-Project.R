@@ -66,7 +66,10 @@ plot(PCEPI, type="l")
 
 
 #Store Canada, Norway, Sweden, and UK CPI data
-canadacpi=read.csv("CanadaCPI2.csv", sep=",")
+
+
+#Canada
+canadacpi=read.csv("CanadaCPI3.csv", sep=",")
 canadacpi <- canadacpi %>%
   filter(Products.and.product.groups == "All-items") %>%
   filter(GEO == "Canada")
@@ -77,11 +80,27 @@ cutcanadacpi[,3]=cutcanadacpi[,2]
 cutcanadacpi[,2]=cutcanadacpi[,1]
 cutcanadacpi[,1]=cutcanadacpi[,3]
 cutcanadacpi[,3]=NULL
-cutcanadacpi=as.xts(cutcanadacpi)
 names(cutcanadacpi)=c("Date","Rate")
+cpican=cutcanadacpi
 
 
+inflationcan=c()
+for(i in 13:length(cpican$Rate)){
+  inflationcan[i]=((as.numeric(cpican$Rate[i])-as.numeric(cpican$Rate[(i-12)]))/(as.numeric(cpican$Rate[(i-12)])))*100
+}
+plot(inflationcan, type="l")
+for(i in 13:length(cpican$Rate)){
+  cpican$Rate[i]=inflationcan[i]
+}
+cpican[1:12,]=NA
+cpican=na.omit(cpican)
 
+
+plot(cpican$Rate, type="l")
+
+
+#Norway
+norwaycpi=read.csv("Norway-CPI.csv", sep=";")
 
 
 
