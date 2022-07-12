@@ -7,7 +7,7 @@ log_exp_target = function(x){
 x <- arfina.sin(10, nodel = list(phi = .2, dfrac = .3, dint = 2))
 d=0.3
 
-kalmanfilter <- function(y,d){
+kalmanfilter <- function(y,param){
        
     # NA values can be handled
     ## Set constant padimameters:
@@ -38,29 +38,23 @@ kalmanfilter <- function(y,d){
            col = c("black", "green", "blue", "red"), lty = 1)
     return(fkf.obj)
 }
-metropolishusting <- function(x,ts,stationary,n){
-    #if is stationary
-    if (stationary) {
-        d <- append(x[[1]],runif(3, min = 0, max = 0.5))
-    } else {
-        d <- append(x[[1]],runif(3, min = 0.5, max= 1))
-    }
-    signa <- append(x[[2]],sd(y, na.rn=FALSE))
-    #posterior
-    d_post <- 
-    for (index in 1:n) {
-       alpha_d <- nin(1, d)
-    }
-}
-likelihood = function(param){
-    a = param[1]
-    sd = param[2]
- 
-    pred = a*x + b
-    singlelikelihoods = dnorm(y, mean = pred, sd = sd, log = T)
-    singlelikelihoods = kalmanfilter()$logLik
-    sumll = sum(singlelikelihoods)
-    return(sumll)
+
+likelihood = function(param,y){
+    likelihoods=0
+    #param a vector contaning (d,sigma) if sigma or d is free set equal to 0
+    d<- c(seq(0.1,0.5,by=0.1))
+    sigma <- c(seq(1,10,by=1))
+    if (param[1]!=0){
+        for (i in 1:lenght(d)) {
+            d<-param[1]
+           likelihoods = likelihoods+kalmanfilter(y,d,sigma)$logLik}
+        }else {
+            for (i in 1:lenght(d)) {
+                sigma<-param[2]
+            likelihoods = likelihoods+kalmanfilter(y,d,sigma)$logLik}
+        }
+    
+    return(likelihoods)
 }
 # Prior distribution
 prior = function(param){
@@ -73,3 +67,27 @@ prior = function(param){
 posterior = function(param){
    return (likelihood(param) + prior(param))
 }
+proposalfunction = function(param){
+    return(rnorm(2,mean = param, sd= c(0.1,0.3)))
+}
+ 
+run_metropolis_MCMC = function(startvalue, iterations){
+    chain = array(dim = c(iterations+1,2))
+    chain[1,] = startvalue
+    for (i in 1:iterations){
+        proposal = proposalfunction(chain[i,])
+ 
+        probab = exp(posterior(proposal) - posterior(chain[i,]))
+        if (runif(1) < probab){
+            chain[i+1,] = proposal
+        }else{
+            chain[i+1,] = chain[i,]
+        }
+    }
+    return(chain)
+}
+startvalue = c(0.3,4)
+chain = run_metropolis_MCMC(startvalue, 10000)
+ 
+burnIn = 5000
+acceptance = 1-mean(duplicated(chain[-(1:burnIn),]))
