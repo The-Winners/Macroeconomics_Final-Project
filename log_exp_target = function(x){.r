@@ -35,7 +35,7 @@ objective <- function(theta, yt) {
                Zt = sp$Zt, HHt = sp$HHt, GGt = sp$GGt, yt = yt)
     return(-ans$logLik)}
 
-kalmanfilter <- function(){
+kalmanfilter <- function(y){
     theta <- c(ar = c(0,0), ma1 = 0, sigma = 1)
     fit <- optim(theta, objective, yt = rbind(y), hessian = TRUE)
     p <- cbind(actual = c(ar1=ar1,ar2=ar2,ma1=ma1,sigma=sigma),

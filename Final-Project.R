@@ -27,7 +27,8 @@ invisible(lapply(packages, library, character.only = TRUE))
 # Load packages
 library(quantmod)
 library(eurostat)
-
+library(FKF)
+library(arfima)
 
 
 #Import data
@@ -173,6 +174,44 @@ lines(ukcpi$Rate, type="l", col="pink")
 lines(swedencpi$Rate, type="l", col="grey")
 lines(PCEPI)
 
+
+arma21ss <- function(ar1, ar2, ma1, sigma) {
+    Tt <- matrix(c(ar1, ar2, 1, 0), ncol = 2)
+    Zt <- matrix(c(1, 0), ncol = 2)
+    ct <- matrix(0)
+    dt <- matrix(0, nrow = 2)
+    GGt <- matrix(0)
+    H <- matrix(c(1, ma1), nrow = 2) * sigma
+    HHt <- H %*% t(H)
+    a0 <- c(0, 0)
+    P0 <- matrix(1e6, nrow = 2, ncol = 2)
+    return(list(a0 = a0, P0 = P0, ct = ct, dt = dt, Zt = Zt, Tt = Tt, GGt = GGt,
+                HHt = HHt))
+}
+objective <- function(theta, yt) {
+    sp <- arma21ss(theta["ar1"], theta["ar2"], theta["ma1"], theta["sigma"])
+    ans <- fkf(a0 = sp$a0, P0 = sp$P0, dt = sp$dt, ct = sp$ct, Tt = sp$Tt,
+               Zt = sp$Zt, HHt = sp$HHt, GGt = sp$GGt, yt = yt)
+    return(-ans$logLik)}
+
+kalmanfilter <- function(y){
+    theta <- c(ar = c(0,0), ma1 = 0, sigma = 1)
+    fit <- optim(theta, objective, yt = rbind(y), hessian = TRUE)
+    p <- cbind(
+           estimate = fit$par,
+           lowerCI = fit$par - qnorm(0.975) * sqrt(diag(solve(fit$hessian))),
+           upperCI = fit$par + qnorm(0.975) * sqrt(diag(solve(fit$hessian))))
+    sp <- arma21ss(theta["ar1"], theta["ar2"], theta["ma1"], theta["sigma"])
+    ans <- fkf(a0 = sp$a0, P0 = sp$P0, dt = sp$dt, ct = sp$ct, Tt = sp$Tt,
+            Zt = sp$Zt, HHt = sp$HHt, GGt = sp$GGt, yt = rbind(y))
+    plot(ans, type = "acf")
+    sm <- fks(ans)
+    plot(sm)
+    lines(y,col="black", lty="dotted")
+    return(p)
+}
+kalmanfilter(cpican$Rate)
+kalmanfilter(as.numeric(swedencpi$Rate))
 
 
 
