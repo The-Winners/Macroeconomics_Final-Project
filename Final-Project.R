@@ -101,6 +101,45 @@ plot(cpican$Rate, type="l")
 
 #Norway
 norwaycpi=read.csv("Norway-CPI.csv", sep=";")
+norwaydata=matrix(NA,1,2)
+norwaydata=as.data.frame(norwaydata)
+names(norwaydata)=c("Date","Rate")
+count=1
+for (i in 2:length(norwaycpi$X)){
+  for (s in 12:1){
+    norwaydata[count,2]=norwaycpi[i,2+s]
+    count=count+1
+  }
+}
+norwaydata$Rate=rev(norwaydata$Rate)
+plot(norwaydata$Rate)
+norwaydata$Date <- data.frame(time = seq(as.Date('1929-01-01'), by = 'months', length = 1116))
 
+#inflrate=function(cpi){
+#  inflation=c()
+#  
+#}
+
+
+
+
+inflationnor=c()
+for(i in 13:length(norwaydata$Rate)){
+  inflationnor[i]=((as.numeric(norwaydata$Rate[i])-as.numeric(norwaydata$Rate[(i-12)]))/(as.numeric(norwaydata$Rate[(i-12)])))*100
+}
+plot(inflationnor, type="l")
+for(i in 13:length(norwaydata$Rate)){
+  norwaydata$Rate[i]=inflationnor[i]
+}
+norwaydata[1:12,]=NA
+norwaydata=na.omit(norwaydata)
+norwaydata=norwaydata[769:1116,]
+
+plot(norwaydata$Date,norwaydata$Rate, type="l")
+
+
+
+#Sweden
+swedencpi=read.csv("Sweden-CPI.csv", sep=" ")
 
 
