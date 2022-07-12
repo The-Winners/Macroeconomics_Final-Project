@@ -141,5 +141,12 @@ plot(norwaydata$Date,norwaydata$Rate, type="l")
 
 #Sweden
 swedencpi=read.csv("Sweden-CPI.csv", sep=" ")
+names(swedencpi)=c("Date","Rate")
+swedencpi=swedencpi[73:length(swedencpi$Date),]
 
+
+#UK
+ukcpi=read.csv("UK-CPI.csv", sep=",")
+ukcpi=ukcpi[222:length(ukcpi$Title),]
+names(ukcpi)=c("Date","Rate")
 
