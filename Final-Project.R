@@ -94,7 +94,7 @@ for(i in 13:length(cpican$Rate)){
 }
 cpican[1:12,]=NA
 cpican=na.omit(cpican)
-
+cpican=cpican[25:length(cpican$Rate),]
 
 plot(cpican$Rate, type="l")
 
@@ -133,7 +133,7 @@ for(i in 13:length(norwaydata$Rate)){
 }
 norwaydata[1:12,]=NA
 norwaydata=na.omit(norwaydata)
-norwaydata=norwaydata[769:1116,]
+norwaydata=norwaydata[757:1116,]
 
 plot(norwaydata$Date,norwaydata$Rate, type="l")
 
@@ -149,4 +149,33 @@ swedencpi=swedencpi[73:length(swedencpi$Date),]
 ukcpi=read.csv("UK-CPI.csv", sep=",")
 ukcpi=ukcpi[222:length(ukcpi$Title),]
 names(ukcpi)=c("Date","Rate")
+
+
+#EU (from 1999 onward)
+eucpi=read.csv("eu-CPI.csv", sep=",")
+eucpi=eucpi[4466:4770,7:8]
+eucpi=eucpi[25:length(eucpi$TIME_PERIOD),]
+
+#Germany (from 1993 to 1999)
+gercpi=read.csv("germany-CPI.csv", sep=";")
+gercpi=gercpi[,c(1,2,4)]
+names(gercpi)=c("Date","Date2","Rate")
+
+
+
+
+
+plot(cpican$Rate, type="l", col="blue", dev="svg")
+lines(norwaydata$Rate, type="l", col="red")
+lines(gercpi$Rate, type="l", col="green")
+lines(eucpi$OBS_VALUE, type="l", col="yellow")
+lines(ukcpi$Rate, type="l", col="pink")
+lines(swedencpi$Rate, type="l", col="grey")
+lines(PCEPI)
+
+
+
+
+
+
 
