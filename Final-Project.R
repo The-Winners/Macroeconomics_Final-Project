@@ -210,11 +210,26 @@ kalmanfilter <- function(y){
     lines(y,col="black", lty="dotted")
     return(p)
 }
+print("Canada")
 kalmanfilter(cpican$Rate)
+
+print("Sweden")
 kalmanfilter(as.numeric(swedencpi$Rate))
 
+print("Norway")
+kalmanfilter(as.numeric(norwaydata$Rate[1:348]))#ci sono dei NA
 
+print("Germany")
+kalmanfilter(gercpi$Rate)
 
+print("Euro")
+kalmanfilter(eucpi$OBS_VALUE)
+
+print("UK")
+kalmanfilter(as.numeric(ukcpi$Rate))
+
+print("US")
+kalmanfilter(as.numeric(PCEPI))
 
 
 
