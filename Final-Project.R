@@ -140,6 +140,7 @@ plot(norwaydata$Date,norwaydata$Rate, type="l")
 
 
 
+
 #Sweden
 swedencpi=read.csv("Sweden-CPI.csv", sep=" ")
 names(swedencpi)=c("Date","Rate")
@@ -163,13 +164,26 @@ gercpi=gercpi[,c(1,2,4)]
 names(gercpi)=c("Date","Date2","Rate")
 
 
+#Add german data to eu data
+
+gercpi$Date=as.character(gercpi$Date)
+count=1
+for(i in 1:length(gercpi$Date)){
+  for (s in 0:11){
+    gercpi$Date[count]=paste0(gercpi$Date[count],"/",as.character(s+1),"/01")
+    count=count+1
+  }
+}
+names(eucpi)=c("Date","Rate")
+gercpi$Date2=NULL
+eucpi=data.frame(rbind(gercpi,eucpi))
 
 
 
 plot(cpican$Rate, type="l", col="blue", dev="svg")
 lines(norwaydata$Rate, type="l", col="red")
 lines(gercpi$Rate, type="l", col="green")
-lines(eucpi$OBS_VALUE, type="l", col="yellow")
+lines(eucpi$Rate, type="l", col="yellow")
 lines(ukcpi$Rate, type="l", col="pink")
 lines(swedencpi$Rate, type="l", col="grey")
 lines(PCEPI)
@@ -219,17 +233,21 @@ kalmanfilter(as.numeric(swedencpi$Rate))
 print("Norway")
 kalmanfilter(as.numeric(norwaydata$Rate[1:348]))#ci sono dei NA
 
-print("Germany")
-kalmanfilter(gercpi$Rate)
+#print("Germany")
+#kalmanfilter(gercpi$Rate)
 
 print("Euro")
-kalmanfilter(eucpi$OBS_VALUE)
+kalmanfilter(eucpi$Rate)
 
 print("UK")
 kalmanfilter(as.numeric(ukcpi$Rate))
 
 print("US")
 kalmanfilter(as.numeric(PCEPI))
+
+
+
+
 
 
 
