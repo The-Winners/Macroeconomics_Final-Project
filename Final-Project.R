@@ -1,6 +1,6 @@
 # THE FINAL PROJECT
 # Author: The Winners
-# Date: 10/10/2017
+# Date: 06/07/2022
 
 
 # PRELIMINARY OPERATIONS
@@ -61,9 +61,11 @@ for(i in 13:length(PCEPI)){
 }
 PCEPI[1:12]=NA
 PCEPI=na.omit(PCEPI)
+PCEPI=PCEPI["1993/2022-01-01"]
 
 
 plot(PCEPI, type="l")
+
 
 
 #Store Canada, Norway, Sweden, and UK CPI data
@@ -157,28 +159,40 @@ names(ukcpi)=c("Date","Rate")
 eucpi=read.csv("eu-CPI.csv", sep=",")
 eucpi=eucpi[4466:4770,7:8]
 eucpi=eucpi[25:length(eucpi$TIME_PERIOD),]
+names(eucpi)=c("Date","Rate")
 
-#Germany (from 1993 to 1999)
-gercpi=read.csv("germany-CPI.csv", sep=";")
-gercpi=gercpi[,c(1,2,4)]
-names(gercpi)=c("Date","Date2","Rate")
+#Germany (from 1993 onward)
+gercpi=read.csv("Germany-CPI.csv", sep=",")
+gercpi=gercpi[,c(1,2)]
+names(gercpi)=c("Date","Rate")
+
+inflationger=c()
+for(i in 13:length(gercpi$Rate)){
+  inflationger[i]=((as.numeric(gercpi$Rate[i])-as.numeric(gercpi$Rate[(i-12)]))/(as.numeric(gercpi$Rate[(i-12)])))*100
+}
+plot(inflationger, type="l")
+for(i in 13:length(gercpi$Rate)){
+  gercpi$Rate[i]=inflationger[i]
+}
+gercpi[1:12,]=NA
+gercpi=na.omit(gercpi)
 
 
 #Add german data to eu data
 
-gercpi$Date=as.character(gercpi$Date)
-count=1
-for(i in 1:length(gercpi$Date)){
-  for (s in 0:11){
-    gercpi$Date[count]=paste0(gercpi$Date[count],"/",as.character(s+1),"/01")
-    count=count+1
-  }
-}
-names(eucpi)=c("Date","Rate")
-gercpi$Date2=NULL
-eucpi=data.frame(rbind(gercpi,eucpi))
+# gercpi$Date=as.character(gercpi$Date)
+# count=1
+# for(i in 1:length(gercpi$Date)){
+#   for (s in 0:11){
+#     gercpi$Date[count]=paste0(gercpi$Date[count],"/",as.character(s+1),"/01")
+#     count=count+1
+#   }
+# }
+# names(eucpi)=c("Date","Rate")
+# gercpi$Date2=NULL
+# eucpi=data.frame(rbind(gercpi,eucpi))
 
-
+#Graph with all the inflation rates
 
 plot(cpican$Rate, type="l", col="blue", dev="svg")
 lines(norwaydata$Rate, type="l", col="red")
@@ -188,6 +202,53 @@ lines(ukcpi$Rate, type="l", col="pink")
 lines(swedencpi$Rate, type="l", col="grey")
 lines(PCEPI)
 
+
+#Divide time series in chunks for analysis
+
+#Euro area
+eupart1=data.frame(eucpi[1:228,])
+eupart2=data.frame(eucpi[1:96,])
+
+#Germany
+gerpart1=data.frame(gercpi[1:300,])
+gerpart2=data.frame(gercpi[1:168,])
+gerpart3=data.frame(gercpi[73:300,])
+
+#UK
+ukpart1=data.frame(ukcpi[1:300,])
+ukpart2=data.frame(ukcpi[1:168,])
+ukpart3=data.frame(ukcpi[73:300,])
+
+#US
+uscpi=PCEPI
+uspart1=data.frame(uscpi[1:300,])
+uspart2=data.frame(uscpi[1:168,])
+uspart3=data.frame(uscpi[73:300,])
+
+#Canada
+cancpi=cpican
+canpart1=data.frame(cancpi[1:300,])
+canpart2=data.frame(cancpi[1:168,])
+canpart3=data.frame(cancpi[73:300,])
+
+#Norway
+norcpi=norwaydata
+norpart1=data.frame(norcpi[1:300,])
+norpart2=data.frame(norcpi[1:168,])
+norpart3=data.frame(norcpi[73:300,])
+
+#Sweden
+swecpi=swedencpi
+swepart1=data.frame(swecpi[1:300,])
+swepart2=data.frame(swecpi[1:168,])
+swepart3=data.frame(swecpi[73:300,])
+
+
+
+
+
+
+#Functions definition
 
 arma21ss <- function(ar1, ar2, ma1, sigma) {
     Tt <- matrix(c(ar1, ar2, 1, 0), ncol = 2)
@@ -224,8 +285,33 @@ kalmanfilter <- function(y){
     lines(y,col="black", lty="dotted")
     return(p)
 }
+
+
+#Kalman Filters
+
+print("EU 1999-2017")
+kalmanfilter(eupart1$Rate)
+
+print("EU 1999-2006")
+kalmanfilter(eupart2$Rate)
+
+print("Germany 1993-2017")
+kalmanfilter(gerpart1$Rate)
+
+print("Germany 1993-2006")
+kalmanfilter(gerpart2$Rate)
+
+print("Germany 1999-2017")
+kalmanfilter(gerpart3$Rate)
+
+
+
+
+
+
+
 print("Canada")
-kalmanfilter(cpican$Rate)
+kalmanfilter(cpipart1$Rate)
 
 print("Sweden")
 kalmanfilter(as.numeric(swedencpi$Rate))
