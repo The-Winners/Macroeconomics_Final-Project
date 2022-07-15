@@ -118,10 +118,6 @@ norwaydata$Rate=rev(norwaydata$Rate)
 plot(norwaydata$Rate)
 norwaydata$Date <- data.frame(time = seq(as.Date('1929-01-01'), by = 'months', length = 1116))
 
-#inflrate=function(cpi){
-#  inflation=c()
-#  
-#}
 
 
 
