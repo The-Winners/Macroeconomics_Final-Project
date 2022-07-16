@@ -71,7 +71,7 @@ plot(PCEPI, type="l")
 ```
 
 
-Inflation data for Canada was unfortunately available in unpleasant format[:(] thus, we needed to filter only "All-items" values and only for "Canada" as a whole.
+Inflation data for Canada was unfortunately available in unpleasant format 😞 thus, we needed to filter only "All-items" values and only for "Canada" as a whole.
 Then, we used the same for cycles as before to convert the time series to inflation rates.
 ```{r c4, message = FALSE, warning = FALSE}
 #Canada
