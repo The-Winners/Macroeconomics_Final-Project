@@ -1,6 +1,6 @@
 # THE FINAL PROJECT
 # Author: The Winners
-# Date: 10/10/2017
+# Date: 06/07/2022
 
 
 # PRELIMINARY OPERATIONS
@@ -27,7 +27,8 @@ invisible(lapply(packages, library, character.only = TRUE))
 # Load packages
 library(quantmod)
 library(eurostat)
-
+library(FKF)
+library(arfima)
 
 
 #Import data
@@ -60,9 +61,11 @@ for(i in 13:length(PCEPI)){
 }
 PCEPI[1:12]=NA
 PCEPI=na.omit(PCEPI)
+PCEPI=PCEPI["1993/2022-01-01"]
 
 
 plot(PCEPI, type="l")
+
 
 
 #Store Canada, Norway, Sweden, and UK CPI data
@@ -94,7 +97,7 @@ for(i in 13:length(cpican$Rate)){
 }
 cpican[1:12,]=NA
 cpican=na.omit(cpican)
-
+cpican=cpican[25:length(cpican$Rate),]
 
 plot(cpican$Rate, type="l")
 
@@ -115,10 +118,6 @@ norwaydata$Rate=rev(norwaydata$Rate)
 plot(norwaydata$Rate)
 norwaydata$Date <- data.frame(time = seq(as.Date('1929-01-01'), by = 'months', length = 1116))
 
-#inflrate=function(cpi){
-#  inflation=c()
-#  
-#}
 
 
 
@@ -133,13 +132,316 @@ for(i in 13:length(norwaydata$Rate)){
 }
 norwaydata[1:12,]=NA
 norwaydata=na.omit(norwaydata)
-norwaydata=norwaydata[769:1116,]
+norwaydata=norwaydata[757:1116,]
 
 plot(norwaydata$Date,norwaydata$Rate, type="l")
 
 
 
+
 #Sweden
 swedencpi=read.csv("Sweden-CPI.csv", sep=" ")
+names(swedencpi)=c("Date","Rate")
+swedencpi=swedencpi[73:length(swedencpi$Date),]
+
+
+#UK
+ukcpi=read.csv("UK-CPI.csv", sep=",")
+ukcpi=ukcpi[222:length(ukcpi$Title),]
+names(ukcpi)=c("Date","Rate")
+
+
+#EU (from 1999 onward)
+eucpi=read.csv("eu-CPI.csv", sep=",")
+eucpi=eucpi[4466:4770,7:8]
+eucpi=eucpi[25:length(eucpi$TIME_PERIOD),]
+names(eucpi)=c("Date","Rate")
+
+#Germany (from 1993 onward)
+gercpi=read.csv("Germany-CPI.csv", sep=",")
+gercpi=gercpi[,c(1,2)]
+names(gercpi)=c("Date","Rate")
+
+inflationger=c()
+for(i in 13:length(gercpi$Rate)){
+  inflationger[i]=((as.numeric(gercpi$Rate[i])-as.numeric(gercpi$Rate[(i-12)]))/(as.numeric(gercpi$Rate[(i-12)])))*100
+}
+plot(inflationger, type="l")
+for(i in 13:length(gercpi$Rate)){
+  gercpi$Rate[i]=inflationger[i]
+}
+gercpi[1:12,]=NA
+gercpi=na.omit(gercpi)
+
+
+#Add german data to eu data
+
+# gercpi$Date=as.character(gercpi$Date)
+# count=1
+# for(i in 1:length(gercpi$Date)){
+#   for (s in 0:11){
+#     gercpi$Date[count]=paste0(gercpi$Date[count],"/",as.character(s+1),"/01")
+#     count=count+1
+#   }
+# }
+# names(eucpi)=c("Date","Rate")
+# gercpi$Date2=NULL
+# eucpi=data.frame(rbind(gercpi,eucpi))
+
+#Graph with all the inflation rates
+
+plot(cpican$Rate, type="l", col="blue", dev="svg")
+lines(norwaydata$Rate, type="l", col="red")
+lines(gercpi$Rate, type="l", col="green")
+lines(eucpi$Rate, type="l", col="yellow")
+lines(ukcpi$Rate, type="l", col="pink")
+lines(swedencpi$Rate, type="l", col="grey")
+lines(PCEPI)
+
+
+#Divide time series in chunks for analysis
+
+#Euro area
+eupart1=data.frame(eucpi[1:228,])
+eupart2=data.frame(eucpi[1:96,])
+
+#Germany
+gerpart1=data.frame(gercpi[1:300,])
+gerpart2=data.frame(gercpi[1:168,])
+gerpart3=data.frame(gercpi[73:300,])
+
+#UK
+ukpart1=data.frame(ukcpi[1:300,])
+ukpart2=data.frame(ukcpi[1:168,])
+ukpart3=data.frame(ukcpi[73:300,])
+
+#US
+uscpi=PCEPI
+uspart1=data.frame(uscpi[1:300,])
+uspart2=data.frame(uscpi[1:168,])
+uspart3=data.frame(uscpi[73:300,])
+
+#Canada
+cancpi=cpican
+canpart1=data.frame(cancpi[1:300,])
+canpart2=data.frame(cancpi[1:168,])
+canpart3=data.frame(cancpi[73:300,])
+
+#Norway
+norcpi=norwaydata
+norpart1=data.frame(norcpi[1:300,])
+norpart2=data.frame(norcpi[1:168,])
+norpart3=data.frame(norcpi[73:300,])
+
+#Sweden
+swecpi=swedencpi
+swepart1=data.frame(swecpi[1:300,])
+swepart2=data.frame(swecpi[1:168,])
+swepart3=data.frame(swecpi[73:300,])
+
+
+
+
+
+
+#Functions definition
+
+arma21ss <- function(ar2, sigma) {
+    ar1<-ar.1
+    ma1<-ma.1
+    Tt <- matrix(c(ar1, ar2, 1, 0), ncol = 2)
+    Zt <- matrix(c(1, 0), ncol = 2)
+    ct <- matrix(0)
+    dt <- matrix(0, nrow = 2)
+    GGt <- matrix(0)
+    H <- matrix(c(1, ma1), nrow = 2) * sigma
+    HHt <- H %*% t(H)
+    a0 <- c(0, 0)
+    P0 <- matrix(1e6, nrow = 2, ncol = 2)
+    return(list(a0 = a0, P0 = P0, ct = ct, dt = dt, Zt = Zt, Tt = Tt, GGt = GGt,
+                HHt = HHt))
+}
+objective <- function(theta, yt) {
+    sp <- arma21ss(theta["d"], theta["sigma"])
+    ans <- fkf(a0 = sp$a0, P0 = sp$P0, dt = sp$dt, ct = sp$ct, Tt = sp$Tt,
+               Zt = sp$Zt, HHt = sp$HHt, GGt = sp$GGt, yt = yt)
+    return(-ans$logLik)}
+
+kalmanfilter <- function(y){
+    theta <- c(d=0,sigma = 1)
+    fit <- optim(theta, objective, yt = rbind(y), hessian = TRUE)
+    p <- cbind(
+           estimate = fit$par,
+           lowerCI = fit$par - qnorm(0.975) * sqrt(diag(solve(fit$hessian))),
+           upperCI = fit$par + qnorm(0.975) * sqrt(diag(solve(fit$hessian))))
+    sp <- arma21ss(theta["d"], theta["sigma"])
+    ans <- fkf(a0 = sp$a0, P0 = sp$P0, dt = sp$dt, ct = sp$ct, Tt = sp$Tt,
+            Zt = sp$Zt, HHt = sp$HHt, GGt = sp$GGt, yt = rbind(y))
+    plot(ans, type = "acf")
+    sm <- fks(ans)
+    plot(sm)
+    lines(y,col="black", lty="dotted")
+    return(p)
+}
+
+#Euro area
+eupart1=data.frame(eucpi[1:228,])
+eupart2=data.frame(eucpi[1:96,])
+
+#Germany
+gerpart1=data.frame(gercpi[1:300,])
+gerpart2=data.frame(gercpi[1:168,])
+gerpart3=data.frame(gercpi[73:300,])
+
+#UK
+ukpart1=data.frame(ukcpi[1:300,])
+ukpart2=data.frame(ukcpi[1:168,])
+ukpart3=data.frame(ukcpi[73:300,])
+
+#US
+uscpi=PCEPI
+uspart1=data.frame(uscpi[1:300,])
+uspart2=data.frame(uscpi[1:168,])
+uspart3=data.frame(uscpi[73:300,])
+
+#Canada
+cancpi=cpican
+canpart1=data.frame(cancpi[1:300,])
+canpart2=data.frame(cancpi[1:168,])
+canpart3=data.frame(cancpi[73:300,])
+
+#Norway
+norcpi=norwaydata
+norpart1=data.frame(norcpi[1:300,])
+norpart2=data.frame(norcpi[1:168,])
+norpart3=data.frame(norcpi[73:300,])
+
+#Sweden
+swecpi=swedencpi
+swepart1=data.frame(swecpi[1:300,])
+swepart2=data.frame(swecpi[1:168,])
+swepart3=data.frame(swecpi[73:300,])
+
+
+
+
+
+
+
+
+
+
+
+#Kalman Filters
+
+print("EU 1999-2017")
+ar.1 <- -0.18
+ma.1 <- 0.37
+kalmanfilter(eupart1$Rate)
+
+print("EU 1999-2006")
+ar.1 <- 0.00
+ma.1 <- 0.19
+kalmanfilter(eupart2$Rate)
+
+print("Germany 1993-2017")
+ar.1 <- 0.44
+ma.1 <- -0.32
+kalmanfilter(gerpart1$Rate)
+
+
+print("Germany 1993-2006")
+ar.1 <- 0.39
+ma.1 <- -0.39
+kalmanfilter(gerpart2$Rate)
+
+print("Germany 1999-2017")
+kalmanfilter(gerpart3$Rate)
+
+print("UK 1993-2017")
+ar.1 <- 0.47
+ma.1 <- -0.41
+kalmanfilter(as.numeric(ukpart1$Rate))
+
+print("UK 1993-2006")
+ar.1 <- 0.6
+ma.1 <- -0.66
+kalmanfilter(as.numeric(ukpart2$Rate))
+
+print("UK 1999-2017")
+ar.1 <- 0.67
+ma.1 <- -0.65
+kalmanfilter(as.numeric(ukpart3$Rate))
+
+print("US 1993-2017")
+ar.1 <- 0.41
+ma.1 <- 0.14
+kalmanfilter(as.numeric(uspart1$Rate))
+
+print("US 1993-2006")
+ar.1 <- -0.16
+ma.1 <- 0.43
+kalmanfilter(as.numeric(uspart2$Rate))
+
+print("US 1999-2017")
+ar.1 <- -0.06
+ma.1 <- 0.36
+kalmanfilter(as.numeric(uspart3$Rate))
+
+print("Canada 1993-2017")
+ar.1 <- -0.15
+ma.1 <- 0.42
+kalmanfilter(as.numeric(canpart1$Rate))
+
+print("Canada 1993-2006")
+ar.1 <- -0.32
+ma.1 <- 0.61
+kalmanfilter(as.numeric(canpart2$Rate))
+
+print("Canada 1999-2017")
+ar.1 <- -0.29
+ma.1 <- 0.44
+kalmanfilter(as.numeric(canpart3$Rate))
+
+print("Norway 1993-2017")
+ar.1 <- 0.21
+ma.1 <- 0.22
+kalmanfilter(as.numeric(norpart1$Rate))
+
+print("Norway 1993-2006")
+ar.1 <- 0.25
+ma.1 <- 0.16
+kalmanfilter(as.numeric(norpart2$Rate))
+
+print("Norway 1999-2017")
+ar.1 <- 0.06
+ma.1 <- 0.32
+kalmanfilter(as.numeric(norpart3$Rate))
+
+print("Sweden 1993-2017")
+ar.1 <- 0.56
+ma.1 <- -0.13
+kalmanfilter(as.numeric(swepart1$Rate))
+
+print("Sweden 1993-2006")
+ar.1 <- 0.74
+ma.1 <- 0.01
+kalmanfilter(as.numeric(swepart2$Rate))
+
+print("Sweden 1999-2017")
+ar.1 <- -0.03
+ma.1 <- 0.03
+kalmanfilter(as.numeric(swepart3$Rate))
+
+
+
+print("Sweden")
+ar.1<-0.56
+ma.1<- -0.13
+kalmanfilter(as.numeric(swepart1$Rate))
+
+print("Norway")
+kalmanfilter(as.numeric(norpart1$Rate))#ci sono dei NA
+
 
 

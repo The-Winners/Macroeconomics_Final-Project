@@ -1,0 +1,253 @@
+---
+title: "The Final Project"
+author: "Federico Vicentini, Alice Pratesi, Riccardo Dal Cero, Xhesjana Shametaj"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+RICORDA DI FARE UNA INTRODUZIONE SUL PAPER
+
+```{r c1, message = FALSE, warning = FALSE}
+rm(list = ls())
+
+# Set the working directory to source file location
+# setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
+# Install packages
+packages <- c("tidyverse", "rsdmx", "eurostat", "tbl2xts",
+              "tidyquant", "BCDating", "pwt10", "dplyr",
+              "stargazer", "car", "forecast", "tseries",
+              "quantmod", "eurostat", "stargazer",
+              "skedastic","Metrics","mFilter", "aTSA","lmtest","xts", "prediction")
+new.packages <- packages[!(packages %in% installed.packages()[, "Package"])]
+if (length(new.packages)) install.packages(new.packages)
+invisible(lapply(packages, library, character.only = TRUE))
+
+# Load packages
+library(quantmod)
+library(eurostat)
+library(FKF)
+library(arfima)
+```
+
+
+First we imported the data from the Fred database checking for NA and NULL values
+```{r c2, message = FALSE, warning = FALSE}
+# Import data
+# Download inflation rates from Fred
+freddata <- c("PCEPI")
+for (i in 1:length(freddata)) {
+  getSymbols(freddata[i], src = "FRED")
+}
+plot(PCEPI)
+
+#Check for NA values
+nas=c(which(is.na(PCEPI)))
+nas
+
+#Check for null values
+zeroes=c(which(PCEPI==0))
+zeroes
+```
+
+
+We now use two for cycles to transform PCEPI in PCE inflation rates which is a time series with monthly year on year inflation rates. 
+Obviously, by doing this we loose the first twelve observations thus, we remove them from the time series. Also, we cut the time series starting from January 1993.
+
+```{r c3, message = FALSE, warning = FALSE}
+inflationus=c()
+for(i in 13:length(PCEPI)){
+  inflationus[i]=((as.numeric(PCEPI[i])-as.numeric(PCEPI[i-12]))/(as.numeric(PCEPI[i-12])))*100
+}
+plot(inflationus, type="l")
+for(i in 13:length(PCEPI)){
+  PCEPI[i]=inflationus[i]
+}
+PCEPI[1:12]=NA
+PCEPI=na.omit(PCEPI)
+PCEPI=PCEPI["1993/2022-01-01"]
+
+plot(PCEPI, type="l")
+```
+
+
+Inflation data for Canada was unfortunately available in unpleasant format[:(] thus, we needed to filter only "All-items" values and only for "Canada" as a whole.
+Then, we used the same for cycles as before to convert the time series to inflation rates.
+```{r c4, message = FALSE, warning = FALSE}
+#Canada
+canadacpi=read.csv("CanadaCPI3.csv", sep=",")
+canadacpi <- canadacpi %>%
+  filter(Products.and.product.groups == "All-items") %>%
+  filter(GEO == "Canada")
+cutcanadacpi=as.data.frame(canadacpi[,11])
+cutcanadacpi[,2]=canadacpi[,1]
+cutcanadacpi[,3]=cutcanadacpi[,2]
+cutcanadacpi[,2]=cutcanadacpi[,1]
+cutcanadacpi[,1]=cutcanadacpi[,3]
+cutcanadacpi[,3]=NULL
+names(cutcanadacpi)=c("Date","Rate")
+cpican=cutcanadacpi
+
+
+inflationcan=c()
+for(i in 13:length(cpican$Rate)){
+  inflationcan[i]=((as.numeric(cpican$Rate[i])-as.numeric(cpican$Rate[(i-12)]))/(as.numeric(cpican$Rate[(i-12)])))*100
+}
+plot(inflationcan, type="l")
+for(i in 13:length(cpican$Rate)){
+  cpican$Rate[i]=inflationcan[i]
+}
+cpican[1:12,]=NA
+cpican=na.omit(cpican)
+cpican=cpican[25:length(cpican$Rate),]
+
+plot(cpican$Rate, type="l")
+```
+
+
+
+Data for Norway was presented in an even worse format than Canadian data. In fact, every row represented a different year and every column was filled with a different month. Thus, we had to design a for cycle in order to straighten up the data in an orderly manner. 
+Then, we used the same for cycles as before to convert the time series to inflation rates.
+```{r c5, message = FALSE, warning = FALSE}
+#Norway
+norwaycpi=read.csv("Norway-CPI.csv", sep=";")
+norwaydata=matrix(NA,1,2)
+norwaydata=as.data.frame(norwaydata)
+names(norwaydata)=c("Date","Rate")
+count=1
+for (i in 2:length(norwaycpi$X)){
+  for (s in 12:1){
+    norwaydata[count,2]=norwaycpi[i,2+s]
+    count=count+1
+  }
+}
+norwaydata$Rate=rev(norwaydata$Rate)
+plot(norwaydata$Rate)
+norwaydata$Date <- data.frame(time = seq(as.Date('1929-01-01'), by = 'months', length = 1116))
+
+inflationnor=c()
+for(i in 13:length(norwaydata$Rate)){
+  inflationnor[i]=((as.numeric(norwaydata$Rate[i])-as.numeric(norwaydata$Rate[(i-12)]))/(as.numeric(norwaydata$Rate[(i-12)])))*100
+}
+plot(inflationnor, type="l")
+for(i in 13:length(norwaydata$Rate)){
+  norwaydata$Rate[i]=inflationnor[i]
+}
+norwaydata[1:12,]=NA
+norwaydata=na.omit(norwaydata)
+norwaydata=norwaydata[757:1116,]
+
+plot(norwaydata$Date,norwaydata$Rate, type="l")
+```
+
+
+Data for Sweden was unexpectedly well presented and also it was already converted into inflation rates. 
+```{r c6, message = FALSE, warning = FALSE}
+#Sweden
+swedencpi=read.csv("Sweden-CPI.csv", sep=" ")
+names(swedencpi)=c("Date","Rate")
+swedencpi=swedencpi[73:length(swedencpi$Date),]
+```
+
+Data for UK was also well presented and already converted into inflation rates. 
+```{r c7, message = FALSE, warning = FALSE}
+#UK
+ukcpi=read.csv("UK-CPI.csv", sep=",")
+ukcpi=ukcpi[222:length(ukcpi$Title),]
+names(ukcpi)=c("Date","Rate")
+```
+
+Data for EU was also well presented and already converted into inflation rates. 
+```{r c8, message = FALSE, warning = FALSE}
+#EU (from 1999 onward)
+eucpi=read.csv("eu-CPI.csv", sep=",")
+eucpi=eucpi[4466:4770,7:8]
+eucpi=eucpi[25:length(eucpi$TIME_PERIOD),]
+names(eucpi)=c("Date","Rate")
+```
+
+
+Data for Germany was well presented but nonetheless we had to convert it into inflation rates using the usual two for cycles.
+```{r c9, message = FALSE, warning = FALSE}
+#Germany (from 1993 onward)
+gercpi=read.csv("Germany-CPI.csv", sep=",")
+gercpi=gercpi[,c(1,2)]
+names(gercpi)=c("Date","Rate")
+
+inflationger=c()
+for(i in 13:length(gercpi$Rate)){
+  inflationger[i]=((as.numeric(gercpi$Rate[i])-as.numeric(gercpi$Rate[(i-12)]))/(as.numeric(gercpi$Rate[(i-12)])))*100
+}
+plot(inflationger, type="l")
+for(i in 13:length(gercpi$Rate)){
+  gercpi$Rate[i]=inflationger[i]
+}
+gercpi[1:12,]=NA
+gercpi=na.omit(gercpi)
+```
+
+
+
+```{r c10, message = FALSE, warning= FALSE}
+#Graph with all the inflation rates
+
+plot(cpican$Rate, type="l", col="blue", dev="svg")
+lines(norwaydata$Rate, type="l", col="red")
+lines(gercpi$Rate, type="l", col="green")
+eucpigraph=eucpi
+nas=matrix(NA,72,1)
+eucpigraph=append(eucpigraph$Rate, nas,after=0)
+lines(eucpigraph, type="l", col="yellow")
+lines(ukcpi$Rate, type="l", col="pink")
+lines(swedencpi$Rate, type="l", col="grey")
+lines(PCEPI)
+```
+
+
+#Divide time series in chunks for analysis
+
+```{r c11, message= FALSE, warning= FALSE}
+#Euro area
+eupart1=data.frame(eucpi[1:228,])
+eupart2=data.frame(eucpi[1:96,])
+
+#Germany
+gerpart1=data.frame(gercpi[1:300,])
+gerpart2=data.frame(gercpi[1:168,])
+gerpart3=data.frame(gercpi[73:300,])
+
+#UK
+ukpart1=data.frame(ukcpi[1:300,])
+ukpart2=data.frame(ukcpi[1:168,])
+ukpart3=data.frame(ukcpi[73:300,])
+
+#US
+uscpi=PCEPI
+uspart1=data.frame(uscpi[1:300,])
+uspart2=data.frame(uscpi[1:168,])
+uspart3=data.frame(uscpi[73:300,])
+
+#Canada
+cancpi=cpican
+canpart1=data.frame(cancpi[1:300,])
+canpart2=data.frame(cancpi[1:168,])
+canpart3=data.frame(cancpi[73:300,])
+
+#Norway
+norcpi=norwaydata
+norpart1=data.frame(norcpi[1:300,])
+norpart2=data.frame(norcpi[1:168,])
+norpart3=data.frame(norcpi[73:300,])
+
+#Sweden
+swecpi=swedencpi
+swepart1=data.frame(swecpi[1:300,])
+swepart2=data.frame(swecpi[1:168,])
+swepart3=data.frame(swecpi[73:300,])
+```
+
+
+```{r c12, message= FALSE, warning= FALSE}
+
+```
+
