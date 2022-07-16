@@ -246,7 +246,9 @@ swepart3=data.frame(swecpi[73:300,])
 
 #Functions definition
 
-arma21ss <- function(ar1, ar2, ma1, sigma) {
+arma21ss <- function(ar2, sigma) {
+    ar1<-ar.1
+    ma1<-ma.1
     Tt <- matrix(c(ar1, ar2, 1, 0), ncol = 2)
     Zt <- matrix(c(1, 0), ncol = 2)
     ct <- matrix(0)
@@ -260,19 +262,19 @@ arma21ss <- function(ar1, ar2, ma1, sigma) {
                 HHt = HHt))
 }
 objective <- function(theta, yt) {
-    sp <- arma21ss(theta["ar1"], theta["ar2"], theta["ma1"], theta["sigma"])
+    sp <- arma21ss(theta["d"], theta["sigma"])
     ans <- fkf(a0 = sp$a0, P0 = sp$P0, dt = sp$dt, ct = sp$ct, Tt = sp$Tt,
                Zt = sp$Zt, HHt = sp$HHt, GGt = sp$GGt, yt = yt)
     return(-ans$logLik)}
 
 kalmanfilter <- function(y){
-    theta <- c(ar = c(0,0), ma1 = 0, sigma = 1)
+    theta <- c(d=0,sigma = 1)
     fit <- optim(theta, objective, yt = rbind(y), hessian = TRUE)
     p <- cbind(
            estimate = fit$par,
            lowerCI = fit$par - qnorm(0.975) * sqrt(diag(solve(fit$hessian))),
            upperCI = fit$par + qnorm(0.975) * sqrt(diag(solve(fit$hessian))))
-    sp <- arma21ss(theta["ar1"], theta["ar2"], theta["ma1"], theta["sigma"])
+    sp <- arma21ss(theta["d"], theta["sigma"])
     ans <- fkf(a0 = sp$a0, P0 = sp$P0, dt = sp$dt, ct = sp$ct, Tt = sp$Tt,
             Zt = sp$Zt, HHt = sp$HHt, GGt = sp$GGt, yt = rbind(y))
     plot(ans, type = "acf")
@@ -286,6 +288,8 @@ kalmanfilter <- function(y){
 #Kalman Filters
 
 print("EU 1999-2017")
+ar.1<-0.18
+ma.1 <- 0.37
 kalmanfilter(eupart1$Rate)
 
 print("EU 1999-2006")
@@ -294,11 +298,16 @@ kalmanfilter(eupart2$Rate)
 print("Germany 1993-2017")
 kalmanfilter(gerpart1$Rate)
 
+
 print("Germany 1993-2006")
 kalmanfilter(gerpart2$Rate)
 
 print("Germany 1999-2017")
 kalmanfilter(gerpart3$Rate)
+
+print("UK 1993-2017")
+
+kalmanfilter(as.numeric(ukpart1$Rate))
 
 
 
@@ -307,10 +316,12 @@ kalmanfilter(gerpart3$Rate)
 
 
 print("Canada")
-kalmanfilter(cpipart1$Rate)
+kalmanfilter(as.numeric(cpipart1$Rate))
 
 print("Sweden")
-kalmanfilter(as.numeric(swedencpi$Rate))
+ar.1<-0.56
+ma.1<- 0.13
+kalmanfilter(as.numeric(swepart1$Rate))
 
 print("Norway")
 kalmanfilter(as.numeric(norwaydata$Rate[1:348]))#ci sono dei NA
@@ -318,14 +329,44 @@ kalmanfilter(as.numeric(norwaydata$Rate[1:348]))#ci sono dei NA
 #print("Germany")
 #kalmanfilter(gercpi$Rate)
 
-print("Euro")
-kalmanfilter(eucpi$Rate)
+#Euro area
+eupart1=data.frame(eucpi[1:228,])
+eupart2=data.frame(eucpi[1:96,])
 
-print("UK")
-kalmanfilter(as.numeric(ukcpi$Rate))
+#Germany
+gerpart1=data.frame(gercpi[1:300,])
+gerpart2=data.frame(gercpi[1:168,])
+gerpart3=data.frame(gercpi[73:300,])
 
-print("US")
-kalmanfilter(as.numeric(PCEPI))
+#UK
+ukpart1=data.frame(ukcpi[1:300,])
+ukpart2=data.frame(ukcpi[1:168,])
+ukpart3=data.frame(ukcpi[73:300,])
+
+#US
+uscpi=PCEPI
+uspart1=data.frame(uscpi[1:300,])
+uspart2=data.frame(uscpi[1:168,])
+uspart3=data.frame(uscpi[73:300,])
+
+#Canada
+cancpi=cpican
+canpart1=data.frame(cancpi[1:300,])
+canpart2=data.frame(cancpi[1:168,])
+canpart3=data.frame(cancpi[73:300,])
+
+#Norway
+norcpi=norwaydata
+norpart1=data.frame(norcpi[1:300,])
+norpart2=data.frame(norcpi[1:168,])
+norpart3=data.frame(norcpi[73:300,])
+
+#Sweden
+swecpi=swedencpi
+swepart1=data.frame(swecpi[1:300,])
+swepart2=data.frame(swecpi[1:168,])
+swepart3=data.frame(swecpi[73:300,])
+
 
 
 
