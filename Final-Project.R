@@ -335,66 +335,102 @@ swepart3=data.frame(swecpi[73:300,])
 #Kalman Filters
 
 print("EU 1999-2017")
-ar.1<-0.18
+ar.1 <- -0.18
 ma.1 <- 0.37
 kalmanfilter(eupart1$Rate)
 
 print("EU 1999-2006")
+ar.1 <- 0.00
+ma.1 <- 0.19
 kalmanfilter(eupart2$Rate)
 
 print("Germany 1993-2017")
+ar.1 <- 0.44
+ma.1 <- -0.32
 kalmanfilter(gerpart1$Rate)
 
 
 print("Germany 1993-2006")
+ar.1 <- 0.39
+ma.1 <- -0.39
 kalmanfilter(gerpart2$Rate)
 
 print("Germany 1999-2017")
 kalmanfilter(gerpart3$Rate)
 
 print("UK 1993-2017")
+ar.1 <- 0.47
+ma.1 <- -0.41
 kalmanfilter(as.numeric(ukpart1$Rate))
 
 print("UK 1993-2006")
+ar.1 <- 0.6
+ma.1 <- -0.66
 kalmanfilter(as.numeric(ukpart2$Rate))
 
 print("UK 1999-2017")
+ar.1 <- 0.67
+ma.1 <- -0.65
 kalmanfilter(as.numeric(ukpart3$Rate))
 
 print("US 1993-2017")
+ar.1 <- 0.41
+ma.1 <- 0.14
 kalmanfilter(as.numeric(uspart1$Rate))
 
 print("US 1993-2006")
+ar.1 <- -0.16
+ma.1 <- 0.43
 kalmanfilter(as.numeric(uspart2$Rate))
 
 print("US 1999-2017")
+ar.1 <- -0.06
+ma.1 <- 0.36
 kalmanfilter(as.numeric(uspart3$Rate))
 
 print("Canada 1993-2017")
+ar.1 <- -0.15
+ma.1 <- 0.42
 kalmanfilter(as.numeric(canpart1$Rate))
 
 print("Canada 1993-2006")
+ar.1 <- -0.32
+ma.1 <- 0.61
 kalmanfilter(as.numeric(canpart2$Rate))
 
 print("Canada 1999-2017")
+ar.1 <- -0.29
+ma.1 <- 0.44
 kalmanfilter(as.numeric(canpart3$Rate))
 
 print("Norway 1993-2017")
+ar.1 <- 0.21
+ma.1 <- 0.22
 kalmanfilter(as.numeric(norpart1$Rate))
 
 print("Norway 1993-2006")
+ar.1 <- 0.25
+ma.1 <- 0.16
 kalmanfilter(as.numeric(norpart2$Rate))
 
 print("Norway 1999-2017")
+ar.1 <- 0.06
+ma.1 <- 0.32
 kalmanfilter(as.numeric(norpart3$Rate))
 
 print("Sweden 1993-2017")
+ar.1 <- 0.56
+ma.1 <- -0.13
 kalmanfilter(as.numeric(swepart1$Rate))
 
 print("Sweden 1993-2006")
+ar.1 <- 0.74
+ma.1 <- 0.01
 kalmanfilter(as.numeric(swepart2$Rate))
 
 print("Sweden 1999-2017")
+ar.1 <- -0.03
+ma.1 <- 0.03
 kalmanfilter(as.numeric(swepart3$Rate))
 
 
