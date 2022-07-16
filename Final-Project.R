@@ -284,51 +284,6 @@ kalmanfilter <- function(y){
     return(p)
 }
 
-
-#Kalman Filters
-
-print("EU 1999-2017")
-ar.1<-0.18
-ma.1 <- 0.37
-kalmanfilter(eupart1$Rate)
-
-print("EU 1999-2006")
-kalmanfilter(eupart2$Rate)
-
-print("Germany 1993-2017")
-kalmanfilter(gerpart1$Rate)
-
-
-print("Germany 1993-2006")
-kalmanfilter(gerpart2$Rate)
-
-print("Germany 1999-2017")
-kalmanfilter(gerpart3$Rate)
-
-print("UK 1993-2017")
-
-kalmanfilter(as.numeric(ukpart1$Rate))
-
-
-
-
-
-
-
-print("Canada")
-kalmanfilter(as.numeric(cpipart1$Rate))
-
-print("Sweden")
-ar.1<-0.56
-ma.1<- 0.13
-kalmanfilter(as.numeric(swepart1$Rate))
-
-print("Norway")
-kalmanfilter(as.numeric(norwaydata$Rate[1:348]))#ci sono dei NA
-
-#print("Germany")
-#kalmanfilter(gercpi$Rate)
-
 #Euro area
 eupart1=data.frame(eucpi[1:228,])
 eupart2=data.frame(eucpi[1:96,])
@@ -370,6 +325,77 @@ swepart3=data.frame(swecpi[73:300,])
 
 
 
+
+
+
+
+
+
+
+#Kalman Filters
+
+print("EU 1999-2017")
+ar.1<-0.18
+ma.1 <- 0.37
+kalmanfilter(eupart1$Rate)
+
+print("EU 1999-2006")
+kalmanfilter(eupart2$Rate)
+
+print("Germany 1993-2017")
+kalmanfilter(gerpart1$Rate)
+
+
+print("Germany 1993-2006")
+kalmanfilter(gerpart2$Rate)
+
+print("Germany 1999-2017")
+kalmanfilter(gerpart3$Rate)
+
+print("UK 1993-2017")
+kalmanfilter(as.numeric(ukpart1$Rate))
+
+print("UK 1993-2006")
+kalmanfilter(as.numeric(ukpart2$Rate))
+
+print("UK 1999-2017")
+kalmanfilter(as.numeric(ukpart3$Rate))
+
+print("US 1993-2017")
+kalmanfilter(as.numeric(uspart1$Rate))
+
+print("US 1993-2006")
+kalmanfilter(as.numeric(uspart2$Rate))
+
+print("US 1999-2017")
+kalmanfilter(as.numeric(uspart3$Rate))
+
+print("Canada 1993-2017")
+kalmanfilter(as.numeric(canpart1$Rate))
+
+print("Canada 1993-2006")
+kalmanfilter(as.numeric(canpart2$Rate))
+
+print("Canada 1999-2017")
+kalmanfilter(as.numeric(canpart3$Rate))
+
+print("Norway 1993-2017")
+kalmanfilter(as.numeric(norpart1$Rate))
+
+print("Norway 1993-2006")
+kalmanfilter(as.numeric(norpart2$Rate))
+
+print("Norway 1999-2017")
+kalmanfilter(as.numeric(norpart3$Rate))
+
+print("Sweden 1993-2017")
+kalmanfilter(as.numeric(swepart1$Rate))
+
+print("Sweden 1993-2006")
+kalmanfilter(as.numeric(swepart2$Rate))
+
+print("Sweden 1999-2017")
+kalmanfilter(as.numeric(swepart3$Rate))
 
 
 
