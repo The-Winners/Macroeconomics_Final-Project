@@ -1,0 +1,27 @@
+PAPER
+
+Inflation targeting has become an increasingly popular monetary policy regime since the 90s
+All inflation targeting central banks are faced with a dilemma. A strict focus on inflation targeting may increase volatility elsewhere in the economy.
+On the other hand an approach to inflation targeting which is too flexible may undermine credibility in the target. Most central banks have opted for policy strategy somewhere in the middle between strict and flexible inflation targeting. 
+In the long run the bank focuses on inflation, while it takes other non-inflation considerations into account over the short-to medium run. So, in the long run only inflation matters, while in the short run shock in demand count as well.
+The paper proposes that the fractional integration order from an autoregressive fractionally integrated moving average (ARFIMA) model can serve as an estimate of the degree of flexibility.
+Note that the main difference between a simple ARIMA model and an ARFIMA is the fact that the integration order can take the value of any real number, not just integers.
+
+The results from those studies suggest that inflation is mean-reverting, but a covariance non-stationary series, i.e. fractional integration with an integration order between 0.5 and 1. Note that a time series is said to be covariance non-stationary if mean and variance become constant over time.
+The higher (lower) the fractional integration order is, the longer (shorter) are the deviations from the mean (i.e. target) and the more flexible (strict) is the inflation  target policy.
+
+The authors in the first section of the paper demonstrate that, even if usually we can obtain good results with a Kalman filter, using an MCMC algorithm provides better results. In the end, we decided to use Kalman filter.
+
+We then applied the algorithm to estimate the fractional integration order for seven economies (Canada, Euro area, Germany, Norway, sweden, the United Kingdom and the United States) between 1993 and 2017 using monthly data. We divided the period in different chunks to account for the effect of the financial crisi in 2008.
+
+
+
+
+
+
+
+
+Our estimation results show that all central banks have flexible targets and the fractional integration order is high and close to 0.9 —> the integration order tends to be higher for larger economies and lower for smaller economies.(non è successo)
+
+Our results also indicate that the inflation targets have become more flexible since the financial crisis of 2008/2009.
+
