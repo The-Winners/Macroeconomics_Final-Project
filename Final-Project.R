@@ -399,4 +399,13 @@ kalmanfilter(as.numeric(swepart3$Rate))
 
 
 
+print("Sweden")
+ar.1<-0.56
+ma.1<- -0.13
+kalmanfilter(as.numeric(swepart1$Rate))
+
+print("Norway")
+kalmanfilter(as.numeric(norpart1$Rate))#ci sono dei NA
+
+
 
