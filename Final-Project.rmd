@@ -264,8 +264,137 @@ swepart2=data.frame(swecpi[1:168,])
 swepart3=data.frame(swecpi[73:300,])
 ```
 
-
+#State Space Maximum Likelihood Estimator of the Fractional Difference Parameter
 ```{r c12, message= FALSE, warning= FALSE}
+#Functions definition
 
+arma21ss <- function(ar1, ar2, ma1, sigma) {
+    Tt <- matrix(c(ar1, ar2, 1, 0), ncol = 2)
+    Zt <- matrix(c(1, 0), ncol = 2)
+    ct <- matrix(0)
+    dt <- matrix(0, nrow = 2)
+    GGt <- matrix(0)
+    H <- matrix(c(1, ma1), nrow = 2) * sigma
+    HHt <- H %*% t(H)
+    a0 <- c(0, 0)
+    P0 <- matrix(1e6, nrow = 2, ncol = 2)
+    return(list(a0 = a0, P0 = P0, ct = ct, dt = dt, Zt = Zt, Tt = Tt, GGt = GGt,
+                HHt = HHt))
+}
+
+## The objective function passed to 'optim'
+objective <- function(theta, yt) {
+    sp <- arma21ss(theta["ar1"], theta["d"], theta["ma1"], theta["sigma"])
+    ans <- fkf(a0 = sp$a0, P0 = sp$P0, dt = sp$dt, ct = sp$ct, Tt = sp$Tt,
+               Zt = sp$Zt, HHt = sp$HHt, GGt = sp$GGt, yt = yt)
+    return(-ans$logLik)
+}
+
+kalmanfilter <- function(y){
+
+    theta <- c(ar1=0,d=0, ma1 = 0, sigma = 1)
+  fit <- optim(theta, objective, yt = rbind(y), hessian = TRUE)
+    ## Confidence intervals
+    p <- cbind(estimate = fit$par,
+           lowerCI = fit$par - qnorm(0.975) * sqrt(diag(solve(fit$hessian))),
+           upperCI = fit$par + qnorm(0.975) * sqrt(diag(solve(fit$hessian))))## Filter the series with estimated parameter values
+    sp <- arma21ss(fit$par["ar1"], fit$par["d"], fit$par["ma1"], fit$par["sigma"])
+    ans <- fkf(a0 = sp$a0, P0 = sp$P0, dt = sp$dt, ct = sp$ct, Tt = sp$Tt,
+              Zt = sp$Zt, HHt = sp$HHt, GGt = sp$GGt, yt = rbind(y))
+    plot(ans, type = "acf")
+    sm <- fks(ans)
+    #plot(sm)
+    #lines(y,col="black", lty="dotted")
+    return(p)
+}
 ```
+We use the Kalman filter: To estimate the parameters using numerical optimisation 
+two functions are specified. The first creates a state space representation out of the four ARFMA parameters. 
+The second is the objective function passed to optim which returns the negative log-likelihood Estimation 
+is then performed using a numeric search by optim. The results are not the same as in the paper, because 
+the state space representation is not the same, due to a lack of information about the form of the matrix.
+We have tried to implement the fractional state space model as close to the specification in the paper.
+We consider a fairly general state-space model specification: the notation  Harvey's model (1989). Let
+αt = ct+Ttαt−1+Rtηt (1) 
+yt = dt+Ztαt+εt (2)
+where ηt ∼ N(0,Qt) and εt ∼ N(0,Ht). The state equation (1) describes the dynamics of the state vector αt, 
+driven by deterministic (ct) and stochastic (ηt) inputs. The observation (or measurement) equation links 
+the observed response yt with the unobserved state vector, with noise εt and (possibly) deterministic inputs dt.
+The fkf package is a wrap envelope in R of a C routine implementing the filter. The state space model 
+considered is as described by equations (1)–(2) with an added input matrix St in the measurement equation, which is thus
+yt = dt + Ztαt + Stεt. (23) 
+All system matrices ct, Tt, dt, Zt, Qt, St and Ht may be constant or time-varying, and we used a time constant 
+specification as in the paper. Otherwise, we would have needed to define them as three-dimensional arrays, 
+the last dimension being time.
 
+```{r c13, message= FALSE, warning= FALSE}
+likelihood = function(param){
+    likelihoods=c()
+    #param a vector contaning (d,sigma) if sigma or d is free set equal to 0
+    d<- c(seq(0.1,0.5,by=0.1))
+    sigma <- c(seq(1,10,by=1))
+    
+    likelihoods = append(likelihoods, kalmanfilter(param[1],param[2])$logLik)
+    out<-likelihoods[which.max(likelihoods)]
+    return(out)
+}
+
+
+
+posterior = function(param,d){
+    options(digits=6)
+    like <- likelihood(param)
+    if (d==TRUE) {
+       prior<- punif(param[1],0,0.5)
+    } else {
+       prior <- punif(param[2],0,10)
+    }
+    post <- exp(like) * prior
+    return(post)
+}
+run_metropolis_MCMC = function(startvalue, iterations){
+    chain = array(dim = c(iterations+1,2))
+    chain[1,] = startvalue
+    
+    for (i in 2:iterations){
+        chain[i,]<-cbind(runif(1,0,0.5),runif(1,0,10))
+        probab = exp(posterior(cbind(chain[i,1],chain[i-1,2]),TRUE) - posterior(chain[i-1,],TRUE))
+        probab =min(1,probab)
+        if (runif(1) < probab){
+            chain[i,1] <- d <-chain[i,1]
+        }else{
+            chain[i,1] <- d <- chain[i-1,1]
+        }
+
+        sigma <- chain[i,2]
+        probab = exp(posterior(cbind(d,sigma),FALSE) - posterior(cbind(d,chain[i-1,2]),FALSE))
+        probab =min(1,probab)
+        if (runif(1) < probab){
+            chain[i,2] <- sigma 
+        }else{
+            chain[i,2] <- chain[i-1,1]
+        }
+
+        print(paste("Iteration:",i,"d=",chain[i,1], sep = " ", collapse = NULL))
+    }
+    return(chain)
+}
+```
+As we had implemented, we applied it to the state space model that 
+we have specified in the arma21ss function. The results were very 
+different from the results of the paper, that issue was the specification
+of the state space model, because of the matrix Tt (The array giving the
+factor of the transition equation). We had tried to implement the Tt matrix
+and all the other matrices, but without the specification of the GGt matrix 
+(the array giving the variance of the disturbances of the measurement equation), 
+it is not feasible. So we exclude the MCMC Bayesian method.
+
+#Results
+
+```{r c14, message=FALSE, warning=FALSE,}
+library(knitr)
+print("Table1.1: EU 1999-2017")
+kable(kalmanfilter(eupart1$Rate))
+print("Table1.2: EU 1999-2006")
+kable(kalmanfilter(eupart2$Rate))
+```

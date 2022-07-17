@@ -270,7 +270,6 @@ objective <- function(theta, yt) {
 
 kalmanfilter <- function(y){
 
-    sigma <- sqrt(2)
     theta <- c(ar = c(0, 0), ma1 = 0, sigma = 1)
   fit <- optim(theta, objective, yt = rbind(y), hessian = TRUE)
     ## Confidence intervals
@@ -282,8 +281,8 @@ kalmanfilter <- function(y){
               Zt = sp$Zt, HHt = sp$HHt, GGt = sp$GGt, yt = rbind(y))
     plot(ans, type = "acf")
     sm <- fks(ans)
-    plot(sm)
-    lines(y,col="black", lty="dotted")
+    #plot(sm)
+    #lines(y,col="black", lty="dotted")
     return(p)
 }
 
