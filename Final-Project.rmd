@@ -2,8 +2,9 @@
 title: "The Final Project"
 author: "Federico Vicentini, Alice Pratesi, Riccardo Dal Cero, Xhesjana Shametaj"
 date: "`r Sys.Date()`"
-output: html_document
+output: pdf_document
 ---
+
 
 ## "Are Central Bankers Inflation Nutters? An MCMC Estimator of the Long-Memory Parameter in a State Space Model"
 
@@ -27,14 +28,14 @@ We then applied the algorithm to estimate the fractional integration order for s
 
 ```{r c1, message = FALSE, warning = FALSE}
 rm(list = ls())
-
+chooseCRANmirror(graphics=FALSE, ind=87)
 # Set the working directory to source file location
 # setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 # Install packages
 packages <- c("tidyverse", "rsdmx", "eurostat", "tbl2xts",
               "tidyquant", "BCDating", "pwt10", "dplyr",
-              "stargazer", "car", "forecast", "tseries",
+              "stargazer", "forecast", "tseries",
               "quantmod", "eurostat", "stargazer",
               "skedastic","Metrics","mFilter", "aTSA","lmtest","xts", "prediction")
 new.packages <- packages[!(packages %in% installed.packages()[, "Package"])]
@@ -89,7 +90,7 @@ plot(PCEPI, type="l")
 ```
 
 
-Inflation data for Canada was unfortunately available in unpleasant format 😞 thus, we needed to filter only "All-items" values and only for "Canada" as a whole.
+Inflation data for Canada was unfortunately available in unpleasant format thus, we needed to filter only "All-items" values and only for "Canada" as a whole.
 Then, we used the same for cycles as before to convert the time series to inflation rates.
 ```{r c4, message = FALSE, warning = FALSE}
 #Canada
@@ -314,16 +315,32 @@ The second is the objective function passed to optim which returns the negative 
 is then performed using a numeric search by optim. The results are not the same as in the paper, because 
 the state space representation is not the same, due to a lack of information about the form of the matrix.
 We have tried to implement the fractional state space model as close to the specification in the paper.
-We consider a fairly general state-space model specification: the notation  Harvey's model (1989). Let
-αt = ct+Ttαt−1+Rtηt (1) 
-yt = dt+Ztαt+εt (2)
-where ηt ∼ N(0,Qt) and εt ∼ N(0,Ht). The state equation (1) describes the dynamics of the state vector αt, 
-driven by deterministic (ct) and stochastic (ηt) inputs. The observation (or measurement) equation links 
-the observed response yt with the unobserved state vector, with noise εt and (possibly) deterministic inputs dt.
+We consider a fairly general state-space model specification.
+State space form:
+The following notation is closest to the one of Koopman et al. The state space model is represented by
+the transition equation and the measurement equation. Let m be the dimension of the state variable,
+d be the dimension of the observations, and n the number of observations. 
+The transition equation and the measurement equation are given by
+$$(1) \space\alpha _{t+1} =d_t +T_t ·\alpha _t + H_t \cdot \eta _t$$ 
+
+$$ (2) \space y_t=c_t+Z_t\cdot\alpha _t + G_t\cdot \epsilon _t$$
+where $\eta _t \sim N(0,Qt)$ and $\epsilon _t \sim N(0,Ht)$.
+$a_0$ A vector giving the initial value/estimation of the state variable.
+$P_0$ A matrix giving the variance of a0.
+$d_t$ A matrix giving the intercept of the transition equation.
+$c_t$ A matrix giving the intercept of the measurement equation.
+$T_t$ An array giving the factor of the transition equation.
+$Z_t$ An array giving the factor of the measurement equation.
+$HH_t$ An array giving the variance of the innovations of the transition equation.
+$GG_t$ An array giving the variance of the disturbances of the measurement equation.
+$y_t$ A matrix containing the observations. “NA”-values are allowed.
+The state equation (1) describes the dynamics of the state vector $\alpha _t$, 
+driven by deterministic ($c_t$) and stochastic ($\eta _t$) inputs. The observation (or measurement) equation links 
+the observed response $y_t$ with the unobserved state vector, with noise $\epsilon _t$ and (possibly) deterministic inputs $d_t$.
 The fkf package is a wrap envelope in R of a C routine implementing the filter. The state space model 
-considered is as described by equations (1)–(2) with an added input matrix St in the measurement equation, which is thus
-yt = dt + Ztαt + Stεt. (23) 
-All system matrices ct, Tt, dt, Zt, Qt, St and Ht may be constant or time-varying, and we used a time constant 
+considered is as described by equations (1)-(2) with an added input matrix St in the measurement equation, which is thus
+$$(3) \space y_t = d_t + Z_t \cdot \alpha _t + G_t \cdot \epsilon _t.$$
+All system matrices $ct$, $Tt$, $dt$, $Zt$, $Qt$, $St$ and $Ht$ may be constant or time-varying, and we used a time constant 
 specification as in the paper. Otherwise, we would have needed to define them as three-dimensional arrays, 
 the last dimension being time.
 
@@ -383,9 +400,9 @@ run_metropolis_MCMC = function(startvalue, iterations){
 As we had implemented, we applied it to the state space model that 
 we have specified in the arma21ss function. The results were very 
 different from the results of the paper, that issue was the specification
-of the state space model, because of the matrix Tt (The array giving the
-factor of the transition equation). We had tried to implement the Tt matrix
-and all the other matrices, but without the specification of the GGt matrix 
+of the state space model, because of the matrix $Tt$ (The array giving the
+factor of the transition equation). We had tried to implement the $Tt$ matrix
+and all the other matrices, but without the specification of the $GGt$ matrix 
 (the array giving the variance of the disturbances of the measurement equation), 
 it is not feasible. So we exclude the MCMC Bayesian method.
 
