@@ -6,29 +6,31 @@ output: pdf_document
 ---
 
 
-## "Are Central Bankers Inflation Nutters? An MCMC Estimator of the Long-Memory Parameter in a State Space Model"
+# "Are Central Bankers Inflation Nutters? An MCMC Estimator of the Long-Memory Parameter in a State Space Model"
 
 Inflation targeting has become an increasingly popular monetary policy regime since the 90s.
 All inflation targeting central banks are faced with a dilemma:
-i) A strict focus on inflation targeting may increase volatility elsewhere in the economy.
-ii) On the other hand an approach to inflation targeting which is too flexible may undermine credibility in the target. 
-Most central banks have opted for policy strategy somewhere in the middle between strict and flexible inflation targeting. 
+\begin{itemize}
+  \item A strict focus on inflation targeting may increase volatility elsewhere in the economy.
+  \item On the other hand an approach to inflation targeting which is too flexible may undermine credibility in the target. 
+\end{itemize}
+Most central banks have opted for policy strategy somewhere in the middle between strict and flexible inflation targeting.\newline
 
 In the long run the bank focuses on inflation, while it takes other non-inflation considerations into account over the short-to medium run. So, in the long run only inflation matters, while in the short run shock in demand count as well.
 The paper proposes that the fractional integration order from an autoregressive fractionally integrated moving average (ARFIMA) model can serve as an estimate of the degree of flexibility.
-Note that the main difference between a simple ARIMA model and an ARFIMA is the fact that the integration order can take the value of any real number, not just integers.
+Note that the main difference between a simple ARIMA model and an ARFIMA is the fact that the integration order can take the value of any real number, not just integers.\newline
 
 The results from those studies suggest that inflation is mean-reverting, but a covariance non-stationary series, i.e. fractional integration with an integration order between 0.5 and 1. Note that a time series is said to be covariance non-stationary if mean and variance become constant over time.
-The higher (lower) the fractional integration order is, the longer (shorter) are the deviations from the mean (i.e. target) and the more flexible (strict) is the inflation  target policy.
+The higher (lower) the fractional integration order is, the longer (shorter) are the deviations from the mean (i.e. target) and the more flexible (strict) is the inflation  target policy.\newline
 
-The authors in the first section of the paper demonstrate that, even if usually we can obtain good results with a Kalman filter, using an MCMC algorithm provides better results. In the end, we decided to use Kalman filter.
+The authors in the first section of the paper demonstrate that, even if usually we can obtain good results with a Kalman filter, using an MCMC algorithm provides better results. In the end, we decided to use Kalman filter.\newline
 
-We then applied the algorithm to estimate the fractional integration order for seven economies (Canada, Euro area, Germany, Norway, Sweden, the United Kingdom and the United States) between 1993 and 2017 using monthly data. We divided the period in different chunks to account for the effect of the financial crisis in 2008.
+We then applied the algorithm to estimate the fractional integration order for seven economies (Canada, Euro area, Germany, Norway, Sweden, the United Kingdom and the United States) between 1993 and 2017 using monthly data. We divided the period in different chunks to account for the effect of the financial crisis in 2008.\newline
 
 
-```{r c1, message = FALSE, warning = FALSE}
+```{r c1, message = FALSE, warning = FALSE, echo=FALSE}
 rm(list = ls())
-chooseCRANmirror(graphics=FALSE, ind=87)
+chooseCRANmirror(graphics=FALSE, ind=47)
 # Set the working directory to source file location
 # setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
@@ -48,7 +50,8 @@ library(eurostat)
 library(FKF)
 library(arfima)
 ```
-
+## Data
+### USA
 
 First we imported the data from the Fred database checking for NA and NULL values
 ```{r c2, message = FALSE, warning = FALSE}
@@ -89,7 +92,7 @@ PCEPI=PCEPI["1993/2022-01-01"]
 plot(PCEPI, type="l")
 ```
 
-
+### Canada
 Inflation data for Canada was unfortunately available in unpleasant format thus, we needed to filter only "All-items" values and only for "Canada" as a whole.
 Then, we used the same for cycles as before to convert the time series to inflation rates.
 ```{r c4, message = FALSE, warning = FALSE}
@@ -123,7 +126,7 @@ cpican=cpican[25:length(cpican$Rate),]
 plot(cpican$Rate, type="l")
 ```
 
-
+### Norway
 
 Data for Norway was presented in an even worse format than Canadian data. In fact, every row represented a different year and every column was filled with a different month. Thus, we had to design a for cycle in order to straighten up the data in an orderly manner. 
 Then, we used the same for cycles as before to convert the time series to inflation rates.
@@ -159,7 +162,7 @@ norwaydata=norwaydata[757:1116,]
 plot(norwaydata$Date,norwaydata$Rate, type="l")
 ```
 
-
+### Sweden
 Data for Sweden was unexpectedly well presented and also it was already converted into inflation rates. 
 ```{r c6, message = FALSE, warning = FALSE}
 #Sweden
@@ -168,6 +171,7 @@ names(swedencpi)=c("Date","Rate")
 swedencpi=swedencpi[73:length(swedencpi$Date),]
 ```
 
+### UK
 Data for UK was also well presented and already converted into inflation rates. 
 ```{r c7, message = FALSE, warning = FALSE}
 #UK
@@ -175,7 +179,7 @@ ukcpi=read.csv("UK-CPI.csv", sep=",")
 ukcpi=ukcpi[222:length(ukcpi$Title),]
 names(ukcpi)=c("Date","Rate")
 ```
-
+### EU
 Data for EU was also well presented and already converted into inflation rates. 
 ```{r c8, message = FALSE, warning = FALSE}
 #EU (from 1999 onward)
@@ -185,7 +189,7 @@ eucpi=eucpi[25:length(eucpi$TIME_PERIOD),]
 names(eucpi)=c("Date","Rate")
 ```
 
-
+### Germany
 Data for Germany was well presented but nonetheless we had to convert it into inflation rates using the usual two for cycles.
 ```{r c9, message = FALSE, warning = FALSE}
 #Germany (from 1993 onward)
@@ -206,7 +210,7 @@ gercpi=na.omit(gercpi)
 ```
 
 
-
+## Data plotting
 ```{r c10, message = FALSE, warning= FALSE}
 #Graph with all the inflation rates
 
@@ -223,7 +227,7 @@ lines(PCEPI)
 ```
 
 
-#Divide time series in chunks for analysis
+## Divide time series in chunks for analysis
 
 ```{r c11, message= FALSE, warning= FALSE}
 #Euro area
@@ -265,7 +269,7 @@ swepart2=data.frame(swecpi[1:168,])
 swepart3=data.frame(swecpi[73:300,])
 ```
 
-#State Space Maximum Likelihood Estimator of the Fractional Difference Parameter
+## State Space Maximum Likelihood Estimator of the Fractional Difference Parameter
 ```{r c12, message= FALSE, warning= FALSE}
 #Functions definition
 
@@ -321,19 +325,21 @@ The following notation is closest to the one of Koopman et al. The state space m
 the transition equation and the measurement equation. Let m be the dimension of the state variable,
 d be the dimension of the observations, and n the number of observations. 
 The transition equation and the measurement equation are given by
-$$(1) \space\alpha _{t+1} =d_t +T_t ·\alpha _t + H_t \cdot \eta _t$$ 
+$$(1) \space\alpha _{t+1} =d_t +T_t \cdot \alpha _t + H_t \cdot \eta _t$$ 
 
 $$ (2) \space y_t=c_t+Z_t\cdot\alpha _t + G_t\cdot \epsilon _t$$
 where $\eta _t \sim N(0,Qt)$ and $\epsilon _t \sim N(0,Ht)$.
-$a_0$ A vector giving the initial value/estimation of the state variable.
-$P_0$ A matrix giving the variance of a0.
-$d_t$ A matrix giving the intercept of the transition equation.
-$c_t$ A matrix giving the intercept of the measurement equation.
-$T_t$ An array giving the factor of the transition equation.
-$Z_t$ An array giving the factor of the measurement equation.
-$HH_t$ An array giving the variance of the innovations of the transition equation.
-$GG_t$ An array giving the variance of the disturbances of the measurement equation.
-$y_t$ A matrix containing the observations. “NA”-values are allowed.
+\begin{enumerate}
+  \item $a_0$ A vector giving the initial value/estimation of the state variable.
+  \item $P_0$ A matrix giving the variance of a0.
+  \item $d_t$ A matrix giving the intercept of the transition equation.
+  \item $c_t$ A matrix giving the intercept of the measurement equation.
+  \item $T_t$ An array giving the factor of the transition equation.
+  \item $Z_t$ An array giving the factor of the measurement equation.
+  \item $HH_t$ An array giving the variance of the innovations of the transition equation.
+  \item $GG_t$ An array giving the variance of the disturbances of the measurement equation.
+  \item $y_t$ A matrix containing the observations. “NA”-values are allowed.
+\end{enumerate}
 The state equation (1) describes the dynamics of the state vector $\alpha _t$, 
 driven by deterministic ($c_t$) and stochastic ($\eta _t$) inputs. The observation (or measurement) equation links 
 the observed response $y_t$ with the unobserved state vector, with noise $\epsilon _t$ and (possibly) deterministic inputs $d_t$.
@@ -343,7 +349,7 @@ $$(3) \space y_t = d_t + Z_t \cdot \alpha _t + G_t \cdot \epsilon _t.$$
 All system matrices $ct$, $Tt$, $dt$, $Zt$, $Qt$, $St$ and $Ht$ may be constant or time-varying, and we used a time constant 
 specification as in the paper. Otherwise, we would have needed to define them as three-dimensional arrays, 
 the last dimension being time.
-
+## MCMC Bayesian estimation
 ```{r c13, message= FALSE, warning= FALSE}
 likelihood = function(param){
     likelihoods=c()
@@ -406,7 +412,7 @@ and all the other matrices, but without the specification of the $GGt$ matrix
 (the array giving the variance of the disturbances of the measurement equation), 
 it is not feasible. So we exclude the MCMC Bayesian method.
 
-#Results
+## Empirical Results
 
 ```{r c14, message=FALSE, warning=FALSE,}
 library(knitr)
