@@ -297,7 +297,7 @@ objective <- function(theta, yt) {
 
 kalmanfilter <- function(y){
 
-    theta <- c(ar1=0,d=0, ma1 = 0, sigma = 1)
+  theta <- c(ar1=0,d=0, ma1 = 0, sigma = 1)
   fit <- optim(theta, objective, yt = rbind(y), hessian = TRUE)
     ## Confidence intervals
     p <- cbind(estimate = fit$par,
@@ -349,7 +349,9 @@ $$(3) \space y_t = d_t + Z_t \cdot \alpha _t + G_t \cdot \epsilon _t.$$
 All system matrices $ct$, $Tt$, $dt$, $Zt$, $Qt$, $St$ and $Ht$ may be constant or time-varying, and we used a time constant 
 specification as in the paper. Otherwise, we would have needed to define them as three-dimensional arrays, 
 the last dimension being time.
+
 ## MCMC Bayesian estimation
+
 ```{r c13, message= FALSE, warning= FALSE}
 likelihood = function(param){
     likelihoods=c()
@@ -413,11 +415,57 @@ and all the other matrices, but without the specification of the $GGt$ matrix
 it is not feasible. So we exclude the MCMC Bayesian method.
 
 ## Empirical Results
+We estimate the parameter $d$ that is the fractional difference which indicates
+if the CB policy is more flexibile respect to inflation target ($d>0.5$), or if
+it has sticked to the inflation target despite the bussines cycle or other economic determinats.
 
-```{r c14, message=FALSE, warning=FALSE,}
+### EU
+
+```{r c14, message=FALSE, warning=FALSE, echo=FALSE}
 library(knitr)
-print("Table1.1: EU 1999-2017")
+print("Table 1.1: EU 1999-2017")
 kable(kalmanfilter(eupart1$Rate))
-print("Table1.2: EU 1999-2006")
+print("Table 1.2: EU 1999-2006")
 kable(kalmanfilter(eupart2$Rate))
 ```
+In the EU, the estimation of fractional integration order $d$ is quite high $>0.9$, thus 
+signaling that inflation is a persistent process characterized by relatively long swings away from the mean. 
+In addition,these results indicate that inflation is a variance-covariance non-stationary, yet still mean-reverting process.
+In other words, inflation exhibits long swings around its mean.
+
+### Germany
+
+```{r c15, message=FALSE, warning=FALSE, echo=FALSE}
+print("Table 2.1: Germany 1993-2006")
+kable(kalmanfilter(gerpart1$Rate))
+print("Table 2.2: Germany 1999-2017")
+kable(kalmanfilter(gerpart2$Rate))
+print("Table 2.3: Germany 1999-2017")
+kalmanfilter(gerpart3$Rate)
+```
+
+### UK
+
+```{r c16, message=FALSE, warning=FALSE, echo=FALSE}
+print("Table 3.1: UK 1993-2017")
+kable(kalmanfilter(as.numeric(ukpart1$Rate)))
+print("Table 3.2: UK 1993-2006")
+kable(kalmanfilter(as.numeric(ukpart2$Rate)))
+print("Table 3.3: UK 1999-2017")
+kable(kalmanfilter(as.numeric(ukpart3$Rate)))
+```
+The United Kingdom's integration order of more than 1 
+suggests that British inflation is a non-stationary
+process, i.e., the Bank of England has not stabilized 
+inflation around a stationary mean. This result is possibly 
+explained by 1 of 3 factors: 
+\begin{enumerate}
+  \item the swings away from the mean are very long, and the sample period too short to capture the mean-reversion of the inflation series;
+  \item the financial crisis in 2008-09 caused the bank to deviate from its inflation target to focusing on stabilizing the economy;
+  \item there is a break in the mean, which may bias the estimate of the fractional integration order.
+\end{enumerate}
+Following the crisis, inflation fluctuated substantially, falling ù
+to 1\% in 2009 before again reaching 5\% in 2012, then falling to 0\% in 2016 before increasing to 3\% in 2017. 
+The financial crisis has clearly affected inflation, indicating a change of focus from central banks.
+However, average United Kingdom inflation is stable over time, which makes the third explanation less likely.
+
