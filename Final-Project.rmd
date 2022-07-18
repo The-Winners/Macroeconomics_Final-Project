@@ -441,7 +441,7 @@ kable(kalmanfilter(gerpart1$Rate))
 print("Table 2.2: Germany 1999-2017")
 kable(kalmanfilter(gerpart2$Rate))
 print("Table 2.3: Germany 1999-2017")
-kalmanfilter(gerpart3$Rate)
+kable(kalmanfilter(gerpart3$Rate))
 ```
 
 ### UK
