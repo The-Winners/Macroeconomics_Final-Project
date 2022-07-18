@@ -303,7 +303,8 @@ kalmanfilter <- function(y){
     ## Confidence intervals
     p <- cbind(estimate = fit$par,
            lowerCI = fit$par - qnorm(0.975) * sqrt(diag(solve(fit$hessian))),
-           upperCI = fit$par + qnorm(0.975) * sqrt(diag(solve(fit$hessian))))## Filter the series with estimated parameter values
+           upperCI = fit$par + qnorm(0.975) * sqrt(diag(solve(fit$hessian))))
+           ## Filter the series with estimated parameter values
     sp <- arma21ss(fit$par["ar1"], fit$par["d"], fit$par["ma1"], fit$par["sigma"])
     ans <- fkf(a0 = sp$a0, P0 = sp$P0, dt = sp$dt, ct = sp$ct, Tt = sp$Tt,
               Zt = sp$Zt, HHt = sp$HHt, GGt = sp$GGt, yt = rbind(y))
@@ -379,7 +380,8 @@ run_metropolis_MCMC = function(startvalue, iterations){
     
     for (i in 2:iterations){
         chain[i,]<-cbind(runif(1,0,0.5),runif(1,0,10))
-        probab = exp(posterior(cbind(chain[i,1],chain[i-1,2]),TRUE) - posterior(chain[i-1,],TRUE))
+        probab = exp(posterior(cbind(chain[i,1],chain[i-1,2]),TRUE) 
+                     - posterior(chain[i-1,],TRUE))
         probab =min(1,probab)
         if (runif(1) < probab){
             chain[i,1] <- d <-chain[i,1]
@@ -388,7 +390,8 @@ run_metropolis_MCMC = function(startvalue, iterations){
         }
 
         sigma <- chain[i,2]
-        probab = exp(posterior(cbind(d,sigma),FALSE) - posterior(cbind(d,chain[i-1,2]),FALSE))
+        probab = exp(posterior(cbind(d,sigma),FALSE) 
+                     - posterior(cbind(d,chain[i-1,2]),FALSE))
         probab =min(1,probab)
         if (runif(1) < probab){
             chain[i,2] <- sigma 
@@ -396,7 +399,8 @@ run_metropolis_MCMC = function(startvalue, iterations){
             chain[i,2] <- chain[i-1,1]
         }
 
-        print(paste("Iteration:",i,"d=",chain[i,1], sep = " ", collapse = NULL))
+        print(paste("Iteration:",i,"d=",chain[i,1], sep = " ", 
+                    collapse = NULL))
     }
     return(chain)
 }
@@ -412,10 +416,9 @@ and all the other matrices, but without the specification of the $GGt$ matrix
 (the array giving the variance of the disturbances of the measurement equation), 
 it is not feasible. So we decided not to use the MCMC Bayesian method, sticking to the Kalman filter.
 
-### Efficency proff
+### Efficiency proof
 
-We simulatr an ARFIMA process with $d=0.9, ma1=0.4, ar1=0.03, \sigma = \sqrt(2)$, and we use our state space model for estimate 
-these coefficent.
+We simulate an ARFIMA process with $d=0.9, MA(1)=0.4, AR(1)=0.03, \sigma = \sqrt{2}$, and we use our state space model to estimate this coefficient.\newline
 ```{r a1, message=FALSE, warning=FALSE, echo=FALSE}
 ## Set the AR parameters
 n <- 1000
@@ -431,8 +434,8 @@ kable(kalmanfilter(a))
 As we can se the kalmanfilter estimation is very close to the true parameters of the arfima process.
 
 ### Difference with the paper
-This is one of the function that estimate with MCMC method the fractional difference used in the paper
-```{r a2, message=FALSE, warning=FALSE, echo=FALSE, include=TRUE}
+This is one of the functions used in the paper to estimate the fractional difference with an MCMC algorithm:
+```{r a2, message=FALSE, warning=FALSE, echo=TRUE, include=TRUE}
 dbayes2=function (Tsim, M,dsim,sigsim, dmcmc1,N,N0, rep) {
   
   dbayesest=numeric(0)
@@ -444,25 +447,16 @@ dbayes2=function (Tsim, M,dsim,sigsim, dmcmc1,N,N0, rep) {
   acceptratiosig=numeric(0)
   
   for (k in 1:rep) {
-    
-    
-    
-    
     acc=0
     accsig=0
     
     dmcmc=numeric(0)
     dmcmc[1]=dmcmc1
     
-    
     y=fracdiff.sim(n=Tsim,d=(dsim),innov = rnorm(Tsim,0,sigsim))$series
-    
-    
-    
     
     sig=numeric()
     sig[1]=sd(y)
-    
     
     for (n in 2:N) 
     {
@@ -492,7 +486,6 @@ dbayes2=function (Tsim, M,dsim,sigsim, dmcmc1,N,N0, rep) {
       a1=matrix(0,Tsim,M)
       P1=array(0,dim=c(Tsim,M,M))
       
-      
       autocorr=as.vector(acf(y,lag.max=(M))$acf)
       
       P1[1,,]=toeplitz(autocorr[-1])
@@ -517,8 +510,6 @@ dbayes2=function (Tsim, M,dsim,sigsim, dmcmc1,N,N0, rep) {
         P1[t+1,,]=T%*%P1[t,,]%*%t(L[t,,])+Q
       }
       
-      
-      
       value=sum(log(abs(F)))+sum(v^2/F)
       
       
@@ -541,12 +532,8 @@ dbayes2=function (Tsim, M,dsim,sigsim, dmcmc1,N,N0, rep) {
       
       Q0[1,1]=sig[n-1]^2
       
-      
       a10=matrix(0,Tsim,M)
       P10=array(0,dim=c(Tsim,M,M))
-      
-      
-      
       
       P10[1,,]=toeplitz(autocorr[-1])
       
@@ -570,12 +557,7 @@ dbayes2=function (Tsim, M,dsim,sigsim, dmcmc1,N,N0, rep) {
         P10[t+1,,]=T0%*%P10[t,,]%*%t(L0[t,,])+Q0
       }
       
-      
-      
       value0=sum(log(abs(F0)))+sum(v0^2/F0)
-      
-      
-      
       
       a=min(1, exp(-0.5*value+0.5*value0))
       if (runif(1,0,1)<a) {
@@ -586,9 +568,6 @@ dbayes2=function (Tsim, M,dsim,sigsim, dmcmc1,N,N0, rep) {
       else {
         dmcmc[n]=dmcmc[n-1]
       }
-      
-      
-      
       
       sigcandi=runif(1,0,10)
       
@@ -610,7 +589,6 @@ dbayes2=function (Tsim, M,dsim,sigsim, dmcmc1,N,N0, rep) {
       Qsig=matrix(0,M,M)
       
       Qsig[1,1]=sigcandi^2
-      
       
       a1sig=matrix(0,Tsim,M)
       P1sig=array(0,dim=c(Tsim,M,M))
@@ -640,11 +618,6 @@ dbayes2=function (Tsim, M,dsim,sigsim, dmcmc1,N,N0, rep) {
       
       valuesig=sum(log(abs(Fsig)))+sum(vsig^2/Fsig)
       
-      
-      
-      
-      
-      
       Ksig0=matrix(0,Tsim,M)
       Lsig0=array(0,dim=c(Tsim,M,M))
       
@@ -653,7 +626,6 @@ dbayes2=function (Tsim, M,dsim,sigsim, dmcmc1,N,N0, rep) {
       for (j in 1:M)
       {Tsig0[1,j]=-gamma(j-dmcmc[n])/(gamma(j+1)*gamma(-dmcmc[n]))
       }
-      
       
       Zsig0=matrix(0,1,M)
       Zsig0[,1]=1
@@ -664,16 +636,13 @@ dbayes2=function (Tsim, M,dsim,sigsim, dmcmc1,N,N0, rep) {
       
       Qsig0[1,1]=sig[n-1]^2
       
-      
       a1sig0=matrix(0,Tsim,M)
       P1sig0=array(0,dim=c(Tsim,M,M))
-      
       
       P1sig0[1,,]=toeplitz(autocorr[-1])
       
       Fsig0=numeric(0)
       vsig0=numeric(0)
-      
       
       for (i in 2:M)
       {Tsig0[i,(i-1)]=1}
@@ -686,15 +655,11 @@ dbayes2=function (Tsim, M,dsim,sigsim, dmcmc1,N,N0, rep) {
         Ksig0[t,]=Tsig0%*%P1sig0[t,,]%*%t(Zsig0)%*%Fsig0[t]^(-1)
         Lsig0[t,,]=Tsig0-Ksig0[t,]%*%Zsig0
         
-        
         a1sig0[t+1,]=Tsig0%*%a1sig0[t,] +Ksig0[t,]*vsig0[t]    
         P1sig0[t+1,,]=Tsig0%*%P1sig0[t,,]%*%t(Lsig0[t,,])+Qsig0
       }
       
       valuesig0=sum(log(abs(Fsig0)))+sum(vsig0^2/Fsig0)
-      
-      
-      
       
       asig=min(1, exp(-0.5*valuesig+0.5*valuesig0))
       if (runif(1,0,1)<asig) {
@@ -705,16 +670,7 @@ dbayes2=function (Tsim, M,dsim,sigsim, dmcmc1,N,N0, rep) {
       else {
         sig[n]=sig[n-1]
       }
-      
-      
-      
     }
-    
-    
-    
-    
-    
-    
     dbayesest[k]=(mean(dmcmc[N0:N]))
     dbayessd[k]=(sd(dmcmc[N0:N]))
     sigbayesest[k]=(mean(sig[N0:N]))
@@ -731,7 +687,6 @@ dbayes2=function (Tsim, M,dsim,sigsim, dmcmc1,N,N0, rep) {
   print("RMSE of d")
   print((mean((dbayesest-dsim)^2))^0.5)
   
-  
   print("Bayes MCMC estimation stationary sigma")
   print(mean(sigbayesest)-sigsim)
   print("sd of  sigma")
@@ -745,11 +700,17 @@ dbayes2=function (Tsim, M,dsim,sigsim, dmcmc1,N,N0, rep) {
   print(mean(acceptratiosig))
 }
 ```
-Regarding the method to estimate the fractional difference, the author does not use package fkf as we did but he computes manually each matrix operation in a different way compared to the one that the fkf does. 
-So this is the reason why the empirical results are different from the paper.
-NOTE: The author of the paper sent the code to replicate the process the day before the deadline. So we decide to use our Kalman filter algorithm, even if we have the code to replicate the exact results.
-These because our algorithm can predict an arfima process with a quite high degree of precision, even if it does not replicate the exact result of the paper
+
+To estimate the fractional difference we used the \texttt{fkf} package, but the authors instead adopted a customized method, computing each matrix operation without the aid of pre-made packages. Thus, their method differs significantly from the \texttt{fkf} package used in our replication attempt. 
+So this is the reason why the empirical results we found are different from those in the paper.
+
+\textbf{NOTE:} The authors of the paper sent us the code to replicate the process on the last day available. So we decided to use our Kalman filter algorithm, even if we had the code to replicate the exact results.
+We did this because our algorithm can predict an ARFIMA process with a quite high degree of precision (as we saw in the "Efficiency Proof" section), even if it does not replicate the results of the paper in a reliable way.
+In addition to this, the algorithm designed by the authors is computationally quite demanding, so we didn't have time to try to compute the results (as a reference, it took more than 3 hours and it didn't even finish the first time series).
+
+
 ## Empirical Results
+
 We estimate the parameter $d$. Here $d$ is the fractional integration order which indicates
 if the CB policy is more flexible with respect to its inflation target. If $d>0.5$ the CB has a flexible target. If not there is evidence that the CB has sticked to the inflation target despite the business cycle or other economic determinants.
 
@@ -764,7 +725,9 @@ kable(kalmanfilter(eupart2$Rate))
 ```
 In the EU, the estimation of the fractional integration order $d$ is quite high $>0.9$, thus 
 signaling that inflation is a persistent process characterized by relatively long swings away from the mean. 
-In addition, these results indicate that inflation is a variance-covariance non-stationary, yet still mean-reverting process.
+In addition, these results indicate that inflation is a variance-covariance non-stationary, yet still mean-reverting process. This is consistent with the results we found in the paper.
+
+\newpage
 
 ### Germany
 
@@ -776,6 +739,10 @@ kable(kalmanfilter(gerpart2$Rate))
 print("Table 2.3: Germany 1999-2017")
 kable(kalmanfilter(gerpart3$Rate))
 ```
+
+With Germany, the general level of $d$ is lower than in the overall EU, signifying a stickier inflation than in the rest of the Union. Also, we found that by restricting the timeseries only to the period of the Monetary Union (1999-2017), the value of $d$ decreases, indicating that the ECB policy is significantly stricter than the policy which was implemented by the Bundesbank. However, this contrasts with the results found by Andersson and Li, who found out the opposite result.
+
+\newpage
 
 ### UK
 
@@ -797,10 +764,12 @@ explained by 1 of 3 factors:
   \item the financial crisis in 2008-09 caused the bank to deviate from its inflation target to focusing on stabilizing the economy;
   \item there is a break in the mean, which may bias the estimate of the fractional integration order.
 \end{enumerate}
-Following the crisis, inflation fluctuated substantially, falling ù
-to 1\% in 2009 before again reaching 5\% in 2012, then falling to 0\% in 2016 before increasing to 3\% in 2017. 
+Following the crisis, inflation fluctuated substantially, falling to 1\% in 2009 before again reaching 5\% in 2012, then falling to 0\% in 2016 before increasing to 3\% in 2017. 
 The financial crisis has clearly affected inflation, indicating a change of focus from central banks.
 However, average United Kingdom inflation is stable over time, which makes the third explanation less likely.
+
+\newpage
+### Canada
 
 ```{r c18, message=FALSE, warning=FALSE, echo=FALSE}
 print("Table 2.1: Canada 1993-2017")
@@ -811,6 +780,13 @@ print("Table 2.3: Canada 1999-2017")
 kable(kalmanfilter(canpart3$Rate))
 ```
 
+Canadian results indicate an high level of $d$ both in the period 1993-2017 and 1999-2017, but (contrary to the results of the paper) $d$ is lower in 1993-2006. We could hypothesize that this is due to a stricter inflation policy being implemented before the crisis, which was then softened to include other economic parameters in the CB response.
+
+
+
+\newpage
+### Sweden
+
 ```{r c19, message=FALSE, warning=FALSE, echo=FALSE}
 print("Table 2.1: Sweden 1993-2017")
 kable(kalmanfilter(as.numeric(swepart1$Rate)))
@@ -819,6 +795,12 @@ kable(kalmanfilter(as.numeric(swepart2$Rate)))
 print("Table 2.3: Sweden 1999-2017")
 kable(kalmanfilter(as.numeric(swepart3$Rate)))
 ```
+
+Sweden presents controversial results. The issue here is that looking at our values for $d$ it would appear that the Sveriges Riksbank has a relaxed approach on inflation, consistent across time. On the other hand, the results from the paper clearly indicates that Swedish policy on inflation targeting was stricter in 1993-2017 and 1993-2006, while it appears more flexible after 1999. Maybe this problem is linked to the different procedure applied in the paper to get the parameter $d$.
+
+
+\newpage
+### Norway
 
 
 ```{r c20, message=FALSE, warning=FALSE, echo=FALSE}
@@ -830,6 +812,14 @@ print("Table 2.3: Norway 1999-2017")
 kable(kalmanfilter(as.numeric(norpart3$Rate)))
 ```
 
+Results for Norway indicate an high degree of flexibility across all time frames from the Norges Bank. In fact, the Norges Bank official policy is to keep inflation "approximately" at 2.5\%, indicating a flexible approach to inflation. This finding is consistent with those from Andersson and Li.
+
+
+
+
+\newpage
+### United States
+
 
 ```{r c21, message=FALSE, warning=FALSE, echo=FALSE}
 print("Table 2.1: United States 1993-2017")
@@ -839,3 +829,8 @@ kable(kalmanfilter(as.numeric(uspart2$PCEPI)))
 print("Table 2.3: United States 1999-2017")
 kable(kalmanfilter(as.numeric(uspart3$PCEPI)))
 ```
+
+Results from the US are not satisfactory, since the first two time frames are consistent with results found by Andersson and Li, and indicate an high degree of flexibility of the Federal Reserve policy on inflation targeting, but the third time frame deals meaningless results. In fact, as we can see in table 3, the third time frame produces a value of $d$ equal to $-0.09$, which clearly makes no sense. Probably the cause can be traced back to the different procedure we used, but we were unable to track down the problem and resolve it.
+
+
+
