@@ -400,6 +400,8 @@ run_metropolis_MCMC = function(startvalue, iterations){
     }
     return(chain)
 }
+
+
 ```
 We applied this Bayesian MCMC estimator to the state space model that 
 we have specified in the arma21ss function. The results were very 
@@ -428,7 +430,325 @@ kable(kalmanfilter(a))
 ```
 As we can se the kalmanfilter estimation is very close to the true parameters of the arfima process.
 
-
+### Difference with the paper
+This is one of the function that estimate with MCMC method the fractional difference used in the paper
+```{r a2, message=FALSE, warning=FALSE, echo=FALSE, include=TRUE}
+dbayes2=function (Tsim, M,dsim,sigsim, dmcmc1,N,N0, rep) {
+  
+  dbayesest=numeric(0)
+  dbayessd=numeric(0)
+  
+  sigbayesest=numeric(0)
+  sigbayessd=numeric(0)
+  acceptratio=numeric(0)
+  acceptratiosig=numeric(0)
+  
+  for (k in 1:rep) {
+    
+    
+    
+    
+    acc=0
+    accsig=0
+    
+    dmcmc=numeric(0)
+    dmcmc[1]=dmcmc1
+    
+    
+    y=fracdiff.sim(n=Tsim,d=(dsim),innov = rnorm(Tsim,0,sigsim))$series
+    
+    
+    
+    
+    sig=numeric()
+    sig[1]=sd(y)
+    
+    
+    for (n in 2:N) 
+    {
+      
+      dcandi=runif(1,0,0.5)
+      
+      
+      K=matrix(0,Tsim,M)
+      L=array(0,dim=c(Tsim,M,M))
+      
+      
+      T=matrix(0,M,M)
+      for (j in 1:M) {
+        T[1,j]=-gamma(j-dcandi)/(gamma(j+1)*gamma(-dcandi))
+      }
+      
+      
+      Z=matrix(0,1,M)
+      Z[,1]=1
+      
+      H=matrix(0,M,1)
+      H[1]=1
+      Q=matrix(0,M,M)
+      Q[1]=sig[n-1]^2
+      
+      
+      a1=matrix(0,Tsim,M)
+      P1=array(0,dim=c(Tsim,M,M))
+      
+      
+      autocorr=as.vector(acf(y,lag.max=(M))$acf)
+      
+      P1[1,,]=toeplitz(autocorr[-1])
+      
+      F=numeric(0)
+      v=numeric(0)
+      
+      
+      for (i in 2:M)
+      {T[i,(i-1)]=1}
+      
+      for (t in 1:(Tsim-1)) 
+      {
+        F[t]=Z%*%P1[t,,]%*%t(Z)
+        
+        v[t]=y[t]-Z%*%a1[t,]
+        K[t,]=T%*%P1[t,,]%*%t(Z)%*%F[t]^(-1)
+        L[t,,]=T-K[t,]%*%Z
+        
+        
+        a1[t+1,]=T%*%a1[t,] +K[t,]*v[t]    
+        P1[t+1,,]=T%*%P1[t,,]%*%t(L[t,,])+Q
+      }
+      
+      
+      
+      value=sum(log(abs(F)))+sum(v^2/F)
+      
+      
+      K0=matrix(0,Tsim,M)
+      L0=array(0,dim=c(Tsim,M,M))
+      
+      
+      T0=matrix(0,M,M)
+      for (j in 1:M)
+      {T0[1,j]=-gamma(j-dmcmc[n-1])/(gamma(j+1)*gamma(-dmcmc[n-1]))
+      }
+      
+      
+      Z0=matrix(0,1,M)
+      Z0[,1]=1
+      
+      H0=matrix(0,M,1)
+      H0[1]=1
+      Q0=matrix(0,M,M)
+      
+      Q0[1,1]=sig[n-1]^2
+      
+      
+      a10=matrix(0,Tsim,M)
+      P10=array(0,dim=c(Tsim,M,M))
+      
+      
+      
+      
+      P10[1,,]=toeplitz(autocorr[-1])
+      
+      F0=numeric(0)
+      v0=numeric(0)
+      
+      
+      for (i in 2:M)
+      {T0[i,(i-1)]=1}
+      
+      for (t in 1:(Tsim-1)) 
+      {
+        F0[t]=Z0%*%P10[t,,]%*%t(Z0)
+        
+        v0[t]=y[t]-Z0%*%a10[t,]
+        K0[t,]=T0%*%P10[t,,]%*%t(Z0)%*%F0[t]^(-1)
+        L0[t,,]=T0-K0[t,]%*%Z0
+        
+        
+        a10[t+1,]=T0%*%a10[t,] +K0[t,]*v0[t]    
+        P10[t+1,,]=T0%*%P10[t,,]%*%t(L0[t,,])+Q0
+      }
+      
+      
+      
+      value0=sum(log(abs(F0)))+sum(v0^2/F0)
+      
+      
+      
+      
+      a=min(1, exp(-0.5*value+0.5*value0))
+      if (runif(1,0,1)<a) {
+        dmcmc[n]=dcandi
+        acc=acc+1
+        
+      }
+      else {
+        dmcmc[n]=dmcmc[n-1]
+      }
+      
+      
+      
+      
+      sigcandi=runif(1,0,10)
+      
+      Ksig=matrix(0,Tsim,M)
+      Lsig=array(0,dim=c(Tsim,M,M))
+      
+      
+      Tsig=matrix(0,M,M)
+      for (j in 1:M)
+      {Tsig[1,j]=-gamma(j-dmcmc[n])/(gamma(j+1)*gamma(-dmcmc[n]))
+      }
+      
+      
+      Zsig=matrix(0,1,M)
+      Zsig[,1]=1
+      
+      Hsig=matrix(0,M,1)
+      Hsig[1]=1
+      Qsig=matrix(0,M,M)
+      
+      Qsig[1,1]=sigcandi^2
+      
+      
+      a1sig=matrix(0,Tsim,M)
+      P1sig=array(0,dim=c(Tsim,M,M))
+      
+      
+      P1sig[1,,]=toeplitz(autocorr[-1])
+      
+      Fsig=numeric(0)
+      vsig=numeric(0)
+      
+      
+      for (i in 2:M)
+      {Tsig[i,(i-1)]=1}
+      
+      for (t in 1:(Tsim-1)) 
+      {
+        Fsig[t]=Zsig%*%P1sig[t,,]%*%t(Zsig)
+        
+        vsig[t]=y[t]-Zsig%*%a1sig[t,]
+        Ksig[t,]=Tsig%*%P1sig[t,,]%*%t(Zsig)%*%Fsig[t]^(-1)
+        Lsig[t,,]=Tsig-Ksig[t,]%*%Zsig
+        
+        
+        a1sig[t+1,]=Tsig%*%a1sig[t,] +Ksig[t,]*vsig[t]    
+        P1sig[t+1,,]=Tsig%*%P1sig[t,,]%*%t(Lsig[t,,])+Qsig
+      }
+      
+      valuesig=sum(log(abs(Fsig)))+sum(vsig^2/Fsig)
+      
+      
+      
+      
+      
+      
+      Ksig0=matrix(0,Tsim,M)
+      Lsig0=array(0,dim=c(Tsim,M,M))
+      
+      
+      Tsig0=matrix(0,M,M)
+      for (j in 1:M)
+      {Tsig0[1,j]=-gamma(j-dmcmc[n])/(gamma(j+1)*gamma(-dmcmc[n]))
+      }
+      
+      
+      Zsig0=matrix(0,1,M)
+      Zsig0[,1]=1
+      
+      Hsig0=matrix(0,M,1)
+      Hsig0[1]=1
+      Qsig0=matrix(0,M,M)
+      
+      Qsig0[1,1]=sig[n-1]^2
+      
+      
+      a1sig0=matrix(0,Tsim,M)
+      P1sig0=array(0,dim=c(Tsim,M,M))
+      
+      
+      P1sig0[1,,]=toeplitz(autocorr[-1])
+      
+      Fsig0=numeric(0)
+      vsig0=numeric(0)
+      
+      
+      for (i in 2:M)
+      {Tsig0[i,(i-1)]=1}
+      
+      for (t in 1:(Tsim-1)) 
+      {
+        Fsig0[t]=Zsig0%*%P1sig0[t,,]%*%t(Zsig0)
+        
+        vsig0[t]=y[t]-Zsig0%*%a1sig0[t,]
+        Ksig0[t,]=Tsig0%*%P1sig0[t,,]%*%t(Zsig0)%*%Fsig0[t]^(-1)
+        Lsig0[t,,]=Tsig0-Ksig0[t,]%*%Zsig0
+        
+        
+        a1sig0[t+1,]=Tsig0%*%a1sig0[t,] +Ksig0[t,]*vsig0[t]    
+        P1sig0[t+1,,]=Tsig0%*%P1sig0[t,,]%*%t(Lsig0[t,,])+Qsig0
+      }
+      
+      valuesig0=sum(log(abs(Fsig0)))+sum(vsig0^2/Fsig0)
+      
+      
+      
+      
+      asig=min(1, exp(-0.5*valuesig+0.5*valuesig0))
+      if (runif(1,0,1)<asig) {
+        sig[n]=sigcandi
+        accsig=accsig+1
+        
+      }
+      else {
+        sig[n]=sig[n-1]
+      }
+      
+      
+      
+    }
+    
+    
+    
+    
+    
+    
+    dbayesest[k]=(mean(dmcmc[N0:N]))
+    dbayessd[k]=(sd(dmcmc[N0:N]))
+    sigbayesest[k]=(mean(sig[N0:N]))
+    sigbayessd[k]=(sd(sig[N0:N]))
+    
+    acceptratio[k]=(acc/n)
+    acceptratiosig[k]=(accsig/n)
+    
+  }
+  print("Bayes MCMC estimation stationary d sigmaunknown")
+  print(mean(dbayesest)-dsim)
+  print("sd of  d")
+  print(sd(dbayessd))
+  print("RMSE of d")
+  print((mean((dbayesest-dsim)^2))^0.5)
+  
+  
+  print("Bayes MCMC estimation stationary sigma")
+  print(mean(sigbayesest)-sigsim)
+  print("sd of  sigma")
+  print(sd(sigbayessd))
+  print("RMSE of sigma")
+  print((mean((sigbayesest-sigsim)^2))^0.5)
+  
+  print("accept ratio")
+  print(mean(acceptratio))
+  print("accept ratio sig")
+  print(mean(acceptratiosig))
+}
+```
+Regarding the method to estimate the fractional difference, the author does not use package fkf as we did but he computes manually each matrix operation in a different way compared to the one that the fkf does. 
+So this is the reason why the empirical results are different from the paper.
+NOTE: The author of the paper sent the code to replicate the process the day before the deadline. So we decide to use our Kalman filter algorithm, even if we have the code to replicate the exact results.
+These because our algorithm can predict an arfima process with a quite high degree of precision, even if it does not replicate the exact result of the paper
 ## Empirical Results
 We estimate the parameter $d$. Here $d$ is the fractional integration order which indicates
 if the CB policy is more flexible with respect to its inflation target. If $d>0.5$ the CB has a flexible target. If not there is evidence that the CB has sticked to the inflation target despite the business cycle or other economic determinants.
