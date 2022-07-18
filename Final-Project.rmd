@@ -1,7 +1,7 @@
 ---
 title: "The Final Project"
 author: "Federico Vicentini, Alice Pratesi, Riccardo Dal Cero, Xhesjana Shametaj"
-date: "`r Sys.Date()`"
+date: "06-07-2022"
 output: pdf_document
 ---
 
@@ -53,7 +53,7 @@ library(arfima)
 ## Data
 ### USA
 
-First we imported the data from the Fred database checking for NA and NULL values
+First we imported the data from the Fred database checking for NA and NULL values.
 ```{r c2, message = FALSE, warning = FALSE}
 # Import data
 # Download inflation rates from Fred
@@ -93,7 +93,7 @@ plot(PCEPI, type="l")
 ```
 
 ### Canada
-Inflation data for Canada was unfortunately available in unpleasant format thus, we needed to filter only "All-items" values and only for "Canada" as a whole.
+Inflation data for Canada was unfortunately available in unpleasant format :( . Thus, we needed to filter only "All-items" values and only for "Canada" as a whole.
 Then, we used the same for cycles as before to convert the time series to inflation rates.
 ```{r c4, message = FALSE, warning = FALSE}
 #Canada
@@ -110,10 +110,10 @@ cutcanadacpi[,3]=NULL
 names(cutcanadacpi)=c("Date","Rate")
 cpican=cutcanadacpi
 
-
 inflationcan=c()
 for(i in 13:length(cpican$Rate)){
-  inflationcan[i]=((as.numeric(cpican$Rate[i])-as.numeric(cpican$Rate[(i-12)]))/(as.numeric(cpican$Rate[(i-12)])))*100
+  inflationcan[i]=((as.numeric(cpican$Rate[i])-as.numeric(cpican$Rate[(i-12)]))/
+                  (as.numeric(cpican$Rate[(i-12)])))*100
 }
 plot(inflationcan, type="l")
 for(i in 13:length(cpican$Rate)){
@@ -128,8 +128,8 @@ plot(cpican$Rate, type="l")
 
 ### Norway
 
-Data for Norway was presented in an even worse format than Canadian data. In fact, every row represented a different year and every column was filled with a different month. Thus, we had to design a for cycle in order to straighten up the data in an orderly manner. 
-Then, we used the same for cycles as before to convert the time series to inflation rates.
+Data for Norway was presented in an even worse format than Canadian data. In fact, every row represented a different year and every column was filled with a different month. Thus, we had to design a for cycle to straighten up the data in an orderly manner. 
+Then, we used the same for cycles as before to convert the time series from CPI to inflation rates.
 ```{r c5, message = FALSE, warning = FALSE}
 #Norway
 norwaycpi=read.csv("Norway-CPI.csv", sep=";")
@@ -271,7 +271,7 @@ swepart3=data.frame(swecpi[73:300,])
 
 ## State Space Maximum Likelihood Estimator of the Fractional Difference Parameter
 ```{r c12, message= FALSE, warning= FALSE}
-#Functions definition
+#Function definition
 
 arma21ss <- function(ar1, ar2, ma1, sigma) {
     Tt <- matrix(c(ar1, ar2, 1, 0), ncol = 2)
@@ -313,12 +313,11 @@ kalmanfilter <- function(y){
     return(p)
 }
 ```
-We use the Kalman filter: To estimate the parameters using numerical optimisation 
-two functions are specified. The first creates a state space representation out of the four ARFMA parameters. 
-The second is the objective function passed to optim which returns the negative log-likelihood Estimation 
-is then performed using a numeric search by optim. The results are not the same as in the paper, because 
-the state space representation is not the same, due to a lack of information about the form of the matrix.
-We have tried to implement the fractional state space model as close to the specification in the paper.
+We use the Kalman filter; to estimate the parameters through numerical optimization 
+two functions are specified. 
+The first creates a state space representation out of the four ARFIMA parameters. 
+The second is the objective function passed to \texttt{optim} which returns the negative log-likelihood estimation. This is performed using a numeric search by \texttt{optim}. The results are not the same as in the paper, because 
+the state space representation is not the same, due to a lack of information about the form of the matrix. We tried to contact both authors of the paper by mail but so far we have got no reply. So we implemented the fractional state space model as close as possible to the specification in the paper.
 We consider a fairly general state-space model specification.
 State space form:
 The following notation is closest to the one of Koopman et al. The state space model is represented by
@@ -341,21 +340,17 @@ where $\eta _t \sim N(0,Qt)$ and $\epsilon _t \sim N(0,Ht)$.
   \item $y_t$ A matrix containing the observations. “NA”-values are allowed.
 \end{enumerate}
 The state equation (1) describes the dynamics of the state vector $\alpha _t$, 
-driven by deterministic ($c_t$) and stochastic ($\eta _t$) inputs. The observation (or measurement) equation links 
-the observed response $y_t$ with the unobserved state vector, with noise $\epsilon _t$ and (possibly) deterministic inputs $d_t$.
-The fkf package is a wrap envelope in R of a C routine implementing the filter. The state space model 
-considered is as described by equations (1)-(2) with an added input matrix St in the measurement equation, which is thus
+driven by deterministic ($c_t$) and stochastic ($\eta _t$) inputs. The observation (or measurement) equation links the observed response $y_t$ with the unobserved state vector, with noise $\epsilon _t$ and (possibly) deterministic inputs $d_t$.
+The \texttt{fkf} package is a wrap envelope in R of a C routine implementing the filter. The state space model considered is as described by equations (1)-(2) with an added input matrix $St$ in the measurement equation, which is
 $$(3) \space y_t = d_t + Z_t \cdot \alpha _t + G_t \cdot \epsilon _t.$$
-All system matrices $ct$, $Tt$, $dt$, $Zt$, $Qt$, $St$ and $Ht$ may be constant or time-varying, and we used a time constant 
-specification as in the paper. Otherwise, we would have needed to define them as three-dimensional arrays, 
-the last dimension being time.
+All system matrices $ct$, $Tt$, $dt$, $Zt$, $Qt$, $St$ and $Ht$ may be constant or time-varying. We decided to use a time constant specification as in the paper. Otherwise, we would have needed to define them as three-dimensional arrays, with the last dimension being time.
 
 ## MCMC Bayesian estimation
 
 ```{r c13, message= FALSE, warning= FALSE}
 likelihood = function(param){
     likelihoods=c()
-    #param a vector contaning (d,sigma) if sigma or d is free set equal to 0
+    #param a vector contianing (d,sigma) if sigma or d is free set equal to 0
     d<- c(seq(0.1,0.5,by=0.1))
     sigma <- c(seq(1,10,by=1))
     
@@ -405,19 +400,18 @@ run_metropolis_MCMC = function(startvalue, iterations){
     return(chain)
 }
 ```
-As we had implemented, we applied it to the state space model that 
+We applied this Bayesian MCMC estimator to the state space model that 
 we have specified in the arma21ss function. The results were very 
-different from the results of the paper, that issue was the specification
-of the state space model, because of the matrix $Tt$ (The array giving the
-factor of the transition equation). We had tried to implement the $Tt$ matrix
+different from the ones in the paper. The issue being the specification
+of the state space model, because of the matrix $Tt$ (the array giving the
+factor of the transition equation). We tried to implement the $Tt$ matrix
 and all the other matrices, but without the specification of the $GGt$ matrix 
 (the array giving the variance of the disturbances of the measurement equation), 
-it is not feasible. So we exclude the MCMC Bayesian method.
+it is not feasible. So we decided not to use the MCMC Bayesian method, sticking to the Kalman filter.
 
 ## Empirical Results
-We estimate the parameter $d$ that is the fractional difference which indicates
-if the CB policy is more flexibile respect to inflation target ($d>0.5$), or if
-it has sticked to the inflation target despite the bussines cycle or other economic determinats.
+We estimate the parameter $d$. Here $d$ is the fractional integration order which indicates
+if the CB policy is more flexible with respect to its inflation target. If $d>0.5$ the CB has a flexible target. If not there is evidence that the CB has sticked to the inflation target despite the business cycle or other economic determinants.
 
 ### EU
 
@@ -428,17 +422,16 @@ kable(kalmanfilter(eupart1$Rate))
 print("Table 1.2: EU 1999-2006")
 kable(kalmanfilter(eupart2$Rate))
 ```
-In the EU, the estimation of fractional integration order $d$ is quite high $>0.9$, thus 
+In the EU, the estimation of the fractional integration order $d$ is quite high $>0.9$, thus 
 signaling that inflation is a persistent process characterized by relatively long swings away from the mean. 
-In addition,these results indicate that inflation is a variance-covariance non-stationary, yet still mean-reverting process.
-In other words, inflation exhibits long swings around its mean.
+In addition, these results indicate that inflation is a variance-covariance non-stationary, yet still mean-reverting process.
 
 ### Germany
 
 ```{r c15, message=FALSE, warning=FALSE, echo=FALSE}
-print("Table 2.1: Germany 1993-2006")
+print("Table 2.1: Germany 1993-2017")
 kable(kalmanfilter(gerpart1$Rate))
-print("Table 2.2: Germany 1999-2017")
+print("Table 2.2: Germany 1993-2006")
 kable(kalmanfilter(gerpart2$Rate))
 print("Table 2.3: Germany 1999-2017")
 kable(kalmanfilter(gerpart3$Rate))
@@ -469,3 +462,40 @@ to 1\% in 2009 before again reaching 5\% in 2012, then falling to 0\% in 2016 be
 The financial crisis has clearly affected inflation, indicating a change of focus from central banks.
 However, average United Kingdom inflation is stable over time, which makes the third explanation less likely.
 
+```{r c18, message=FALSE, warning=FALSE, echo=FALSE}
+print("Table 2.1: Canada 1993-2017")
+kable(kalmanfilter(canpart1$Rate))
+print("Table 2.2: Canada 1993-2006")
+kable(kalmanfilter(canpart2$Rate))
+print("Table 2.3: Canada 1999-2017")
+kable(kalmanfilter(canpart3$Rate))
+```
+
+```{r c19, message=FALSE, warning=FALSE, echo=FALSE}
+print("Table 2.1: Sweden 1993-2017")
+kable(kalmanfilter(as.numeric(swepart1$Rate)))
+print("Table 2.2: Sweden 1993-2006")
+kable(kalmanfilter(as.numeric(swepart2$Rate)))
+print("Table 2.3: Sweden 1999-2017")
+kable(kalmanfilter(as.numeric(swepart3$Rate)))
+```
+
+
+```{r c20, message=FALSE, warning=FALSE, echo=FALSE}
+print("Table 2.1: Norway 1993-2017")
+kable(kalmanfilter(as.numeric(norpart1$Rate)))
+print("Table 2.2: Norway 1993-2006")
+kable(kalmanfilter(as.numeric(norpart2$Rate)))
+print("Table 2.3: Norway 1999-2017")
+kable(kalmanfilter(as.numeric(norpart3$Rate)))
+```
+
+
+```{r c21, message=FALSE, warning=FALSE, echo=FALSE}
+print("Table 2.1: United States 1993-2017")
+kable(kalmanfilter(as.numeric(uspart1$PCEPI)))
+print("Table 2.2: United States 1993-2006")
+kable(kalmanfilter(as.numeric(uspart2$PCEPI)))
+print("Table 2.3: United States 1999-2017")
+kable(kalmanfilter(as.numeric(uspart3$PCEPI)))
+```
