@@ -49,6 +49,7 @@ library(quantmod)
 library(eurostat)
 library(FKF)
 library(arfima)
+library(knitr)
 ```
 ## Data
 ### USA
@@ -409,6 +410,25 @@ and all the other matrices, but without the specification of the $GGt$ matrix
 (the array giving the variance of the disturbances of the measurement equation), 
 it is not feasible. So we decided not to use the MCMC Bayesian method, sticking to the Kalman filter.
 
+### Efficency proff
+
+We simulatr an ARFIMA process with $d=0.9, ma1=0.4, ar1=0.03, \sigma = \sqrt(2)$, and we use our state space model for estimate 
+these coefficent.
+```{r a1, message=FALSE, warning=FALSE, echo=FALSE}
+## Set the AR parameters
+n <- 1000
+ar1 <- 0.03
+ar2 <- 0.9
+ma1 <- 0.4
+sigma <- sqrt(2)
+
+a <- arima.sim(model = list(ar = c(ar1, ar2), ma = ma1), n = n,
+               innov = rnorm(n) * sigma)
+kable(kalmanfilter(a))
+```
+As we can se the kalmanfilter estimation is very close to the true parameters of the arfima process.
+
+
 ## Empirical Results
 We estimate the parameter $d$. Here $d$ is the fractional integration order which indicates
 if the CB policy is more flexible with respect to its inflation target. If $d>0.5$ the CB has a flexible target. If not there is evidence that the CB has sticked to the inflation target despite the business cycle or other economic determinants.
@@ -416,7 +436,7 @@ if the CB policy is more flexible with respect to its inflation target. If $d>0.
 ### EU
 
 ```{r c14, message=FALSE, warning=FALSE, echo=FALSE}
-library(knitr)
+
 print("Table 1.1: EU 1999-2017")
 kable(kalmanfilter(eupart1$Rate))
 print("Table 1.2: EU 1999-2006")
