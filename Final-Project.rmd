@@ -80,7 +80,8 @@ Obviously, by doing this we loose the first twelve observations thus, we remove 
 ```{r c3, message = FALSE, warning = FALSE}
 inflationus=c()
 for(i in 13:length(PCEPI)){
-  inflationus[i]=((as.numeric(PCEPI[i])-as.numeric(PCEPI[i-12]))/(as.numeric(PCEPI[i-12])))*100
+  inflationus[i]=((as.numeric(PCEPI[i])-as.numeric(PCEPI[i-12]))/
+                  (as.numeric(PCEPI[i-12])))*100
 }
 plot(inflationus, type="l")
 for(i in 13:length(PCEPI)){
@@ -200,7 +201,8 @@ names(gercpi)=c("Date","Rate")
 
 inflationger=c()
 for(i in 13:length(gercpi$Rate)){
-  inflationger[i]=((as.numeric(gercpi$Rate[i])-as.numeric(gercpi$Rate[(i-12)]))/(as.numeric(gercpi$Rate[(i-12)])))*100
+  inflationger[i]=((as.numeric(gercpi$Rate[i])-as.numeric(gercpi$Rate[(i-12)]))/
+                    (as.numeric(gercpi$Rate[(i-12)])))*100
 }
 plot(inflationger, type="l")
 for(i in 13:length(gercpi$Rate)){
@@ -319,7 +321,7 @@ We use the Kalman filter; to estimate the parameters through numerical optimizat
 two functions are specified. 
 The first creates a state space representation out of the four ARFIMA parameters. 
 The second is the objective function passed to \texttt{optim} which returns the negative log-likelihood estimation. This is performed using a numeric search by \texttt{optim}. The results are not the same as in the paper, because 
-the state space representation is not the same, due to a lack of information about the form of the matrix. We tried to contact both authors of the paper by mail but so far we have got no reply. So we implemented the fractional state space model as close as possible to the specification in the paper.
+the state space representation is not the same, due to a lack of information about the form of the matrix. We tried to contact both authors of the paper by mail but we got a reply only on the very last day. So we implemented the fractional state space model as close as possible to the specification in the paper.
 We consider a fairly general state-space model specification.
 State space form:
 The following notation is closest to the one of Koopman et al. The state space model is represented by
